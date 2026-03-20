@@ -27,6 +27,11 @@ npx prisma migrate dev   # Migrations
 - Valores monetários usam Prisma `Decimal(10,2)` — sempre serializar com `serializeDecimal()` antes de retornar JSON
 - API routes protegidas usam `getSession()` do Better Auth, validação com Zod `safeParse()`
 - Sessões gerenciadas pelo Better Auth via cookie httpOnly
+- Cadastro só é permitido via link de convite (não existe cadastro aberto)
+- Rotas públicas no middleware: `/login`, `/cadastro`, `/convite`, `/api/auth/*`, `/api/groups/info`
+- `NEXT_PUBLIC_` env vars são inlined no build — usar `ARG` no Dockerfile
+- `.dockerignore` exclui `.env` para não sobrescrever env vars do Railway
+- Inputs devem ter `font-size: 16px` para evitar zoom no Safari iOS
 
 ## Estrutura
 

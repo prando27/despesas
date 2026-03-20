@@ -5,6 +5,7 @@ App para dividir despesas compartilhadas entre membros de um grupo. Ideal para f
 ## Features
 
 - Login com email/senha (Google OAuth opcional)
+- Cadastro apenas por convite (sem cadastro aberto)
 - Grupos com convite por código
 - Lançamento de despesas com múltiplos itens
 - Upload de cupom com extração automática via IA (OCR)
