@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSession } from "@/lib/auth-client";
 
 interface GroupInfo {
   name: string;
@@ -16,9 +17,12 @@ export default function ConvitePage() {
   const searchParams = useSearchParams();
   const code = params.code as string;
   const countAsId = searchParams.get("vinculo");
+  const { data: session, isPending } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
+
+  const conviteUrl = `/convite/${code}${countAsId ? `?vinculo=${countAsId}` : ""}`;
 
   useEffect(() => {
     async function fetchGroupInfo() {
@@ -32,6 +36,12 @@ export default function ConvitePage() {
   }, [code, countAsId]);
 
   async function handleJoin() {
+    if (!session) {
+      // Redirecionar para cadastro com redirect de volta
+      router.push(`/cadastro?redirect=${encodeURIComponent(conviteUrl)}`);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -51,6 +61,14 @@ export default function ConvitePage() {
       setError(data.error || "Erro ao entrar no grupo");
     }
     setLoading(false);
+  }
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
   }
 
   return (
@@ -73,9 +91,14 @@ export default function ConvitePage() {
               Seus lançamentos contarão como <span className="font-medium text-foreground">{groupInfo.countAsName}</span>
             </p>
           )}
+          {!session && (
+            <p className="text-sm text-muted-foreground">
+              Você precisa criar uma conta para entrar no grupo.
+            </p>
+          )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           <Button className="w-full" onClick={handleJoin} disabled={loading}>
-            {loading ? "Entrando..." : "Aceitar convite"}
+            {loading ? "Entrando..." : session ? "Aceitar convite" : "Criar conta e entrar"}
           </Button>
         </CardContent>
       </Card>

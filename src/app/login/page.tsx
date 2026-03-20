@@ -62,10 +62,7 @@ export default function LoginPage() {
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            Não tem conta?{" "}
-            <Link href="/cadastro" className="text-primary underline">
-              Cadastre-se
-            </Link>
+            Para criar conta, peça um link de convite.
           </p>
         </CardContent>
       </Card>

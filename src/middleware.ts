@@ -18,6 +18,11 @@ export function middleware(req: NextRequest) {
     req.cookies.get("better-auth.session_token")?.value ||
     req.cookies.get("__Secure-better-auth.session_token")?.value;
 
+  // Public API routes (no auth needed)
+  if (pathname.startsWith("/api/groups/info")) {
+    return NextResponse.next();
+  }
+
   // API routes need auth
   if (pathname.startsWith("/api/") && !sessionToken) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

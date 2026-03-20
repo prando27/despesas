@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CadastroPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const isFromInvite = redirect?.startsWith("/convite/");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (!isFromInvite) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle className="text-center text-xl">Cadastro</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <p className="text-muted-foreground">
+              Para criar uma conta, você precisa de um link de convite.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Peça para alguém do grupo enviar o convite para você.
+            </p>
+            <Link href="/login">
+              <Button variant="outline" className="w-full mt-2">Voltar ao login</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +53,7 @@ export default function CadastroPage() {
     if (result.error) {
       setError(result.error.message || "Erro ao criar conta");
     } else {
-      router.push("/despesas");
+      router.push(redirect || "/despesas");
     }
     setLoading(false);
   }
