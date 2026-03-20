@@ -26,7 +26,15 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+
+# playwright mcp
+.playwright-mcp/
+
+# claude
+.claude/
+.agents/
 
 # vercel
 .vercel
