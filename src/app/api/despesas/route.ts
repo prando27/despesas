@@ -51,25 +51,35 @@ export async function POST(req: NextRequest) {
 
   let receiptUrl: string | null = null;
   if (parsed.data.receiptImage && parsed.data.receiptMediaType) {
-    receiptUrl = await uploadReceipt(session.user.id, parsed.data.receiptImage, parsed.data.receiptMediaType);
+    try {
+      receiptUrl = await uploadReceipt(session.user.id, parsed.data.receiptImage, parsed.data.receiptMediaType);
+    } catch (err) {
+      console.error("Erro ao fazer upload do cupom:", err);
+      // Salva a despesa mesmo sem o cupom
+    }
   }
 
-  const expense = await prisma.expense.create({
-    data: {
-      description,
-      date: new Date(date),
-      receiptUrl,
-      createdById: session.user.id,
-      groupId,
-      items: {
-        create: items.map((item) => ({
-          description: item.description,
-          value: item.value,
-        })),
+  try {
+    const expense = await prisma.expense.create({
+      data: {
+        description,
+        date: new Date(date),
+        receiptUrl,
+        createdById: session.user.id,
+        groupId,
+        items: {
+          create: items.map((item) => ({
+            description: item.description,
+            value: item.value,
+          })),
+        },
       },
-    },
-    include: { items: true },
-  });
+      include: { items: true },
+    });
 
-  return NextResponse.json({ expense: serializeDecimal(expense) }, { status: 201 });
+    return NextResponse.json({ expense: serializeDecimal(expense) }, { status: 201 });
+  } catch (err) {
+    console.error("Erro ao salvar despesa:", err);
+    return NextResponse.json({ error: "Erro ao salvar despesa" }, { status: 500 });
+  }
 }
