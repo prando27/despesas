@@ -38,4 +38,9 @@
     padding-right: env(safe-area-inset-right);
     -webkit-text-size-adjust: 100%;
   }
+
+  /* Prevent Safari iOS auto-zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
