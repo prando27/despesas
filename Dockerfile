@@ -12,6 +12,7 @@ COPY . .
 
 RUN npx prisma generate
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV BETTER_AUTH_SECRET="build-time-dummy-secret-not-used-in-production"
 ARG NEXT_PUBLIC_BETTER_AUTH_URL
 ENV NEXT_PUBLIC_BETTER_AUTH_URL=$NEXT_PUBLIC_BETTER_AUTH_URL
 RUN npm run build
