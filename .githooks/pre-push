@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "🔨 Running build check before push..."
+npm run build > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Fix errors before pushing."
+  npm run build 2>&1 | grep -E "Error:|Failed"
+  exit 1
+fi
+echo "✅ Build passed!"
