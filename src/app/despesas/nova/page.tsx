@@ -23,6 +23,7 @@ export default function NovaDespesaPage() {
   const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
   const [receiptMediaType, setReceiptMediaType] = useState<string>("image/jpeg");
   const [saving, setSaving] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
 
   function handleItemsExtracted(extracted: Item[]) {
@@ -114,6 +115,7 @@ export default function NovaDespesaPage() {
               setReceiptBase64(base64);
               setReceiptMediaType(mediaType);
             }}
+            onLoadingChange={setExtracting}
           />
         </CardContent>
       </Card>
@@ -148,34 +150,50 @@ export default function NovaDespesaPage() {
                   + Item
                 </Button>
               </div>
-              <div className="space-y-2">
-                {items.map((item, i) => (
-                  <div key={i} className="flex gap-2 items-center">
-                    <Input
-                      placeholder="Descricao do item"
-                      value={item.description}
-                      onChange={(e) => updateItem(i, "description", e.target.value)}
-                      className="flex-1 min-w-0"
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      inputMode="decimal"
-                      placeholder="Valor"
-                      value={item.value || ""}
-                      onChange={(e) => updateItem(i, "value", parseFloat(e.target.value) || 0)}
-                      className="w-24 shrink-0"
-                    />
-                    {items.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)} className="text-red-500 px-2 shrink-0">
-                        X
-                      </Button>
-                    )}
+              {extracting ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  ))}
+                  <p className="text-sm text-center text-muted-foreground animate-pulse">
+                    Extraindo itens do cupom...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {items.map((item, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Descricao do item"
+                          value={item.description}
+                          onChange={(e) => updateItem(i, "description", e.target.value)}
+                          className="flex-1 min-w-0"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          inputMode="decimal"
+                          placeholder="Valor"
+                          value={item.value || ""}
+                          onChange={(e) => updateItem(i, "value", parseFloat(e.target.value) || 0)}
+                          className="w-24 shrink-0"
+                        />
+                        {items.length > 1 && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)} className="text-red-500 px-2 shrink-0">
+                            X
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <p className="text-sm text-right font-medium">Total: R$ {total.toFixed(2)}</p>
+                  <p className="text-sm text-right font-medium">Total: R$ {total.toFixed(2)}</p>
+                </>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}

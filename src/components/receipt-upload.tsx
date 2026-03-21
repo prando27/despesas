@@ -13,6 +13,7 @@ interface ReceiptUploadProps {
   onDateExtracted: (date: string) => void;
   onDescriptionExtracted: (description: string) => void;
   onImageReady: (base64: string, mediaType: string) => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 const MAX_WIDTH = 1200;
@@ -52,7 +53,7 @@ function compressImage(file: File): Promise<{ base64: string; mediaType: string;
   });
 }
 
-export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady }: ReceiptUploadProps) {
+export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange }: ReceiptUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
   async function handleExtract() {
     if (!preview) return;
     setLoading(true);
+    onLoadingChange?.(true);
     setError(null);
 
     try {
@@ -97,6 +99,7 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
       setError("Erro ao extrair itens do cupom");
     } finally {
       setLoading(false);
+      onLoadingChange?.(false);
     }
   }
 
