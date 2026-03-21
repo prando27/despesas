@@ -9,7 +9,7 @@ import { useGroup } from "@/hooks/use-group";
 import { useSession } from "@/lib/auth-client";
 import type { Expense } from "@/lib/types";
 
-function DespesasContent() {
+function ExpensesContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const { currentGroup, loading: groupLoading } = useGroup();
@@ -20,12 +20,12 @@ function DespesasContent() {
   useEffect(() => {
     if (groupLoading) return;
     if (!currentGroup) {
-      router.push("/grupos/novo");
+      router.push("/groups/new");
       return;
     }
 
     setLoading(true);
-    fetch(`/api/despesas?month=${month}&year=${year}&groupId=${currentGroup.id}`)
+    fetch(`/api/expenses?month=${month}&year=${year}&groupId=${currentGroup.id}`)
       .then((r) => r.json())
       .then((data) => setExpenses(data.expenses || []))
       .finally(() => setLoading(false));
@@ -33,7 +33,7 @@ function DespesasContent() {
 
   async function handleDelete(id: string) {
     if (!confirm("Excluir esta despesa?")) return;
-    await fetch(`/api/despesas/${id}`, { method: "DELETE" });
+    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
     setExpenses((prev) => prev.filter((e) => e.id !== id));
   }
 
@@ -62,10 +62,10 @@ function DespesasContent() {
   );
 }
 
-export default function DespesasPage() {
+export default function ExpensesPage() {
   return (
     <Suspense fallback={<p className="text-center text-muted-foreground py-8">Carregando...</p>}>
-      <DespesasContent />
+      <ExpensesContent />
     </Suspense>
   );
 }

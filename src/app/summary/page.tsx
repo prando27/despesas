@@ -27,7 +27,7 @@ interface PendingData {
   totalPending: number;
 }
 
-function ResumoContent() {
+function SummaryContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const { currentGroup, loading: groupLoading } = useGroup();
@@ -43,14 +43,14 @@ function ResumoContent() {
   useEffect(() => {
     if (groupLoading) return;
     if (!currentGroup) {
-      router.push("/grupos/novo");
+      router.push("/groups/new");
       return;
     }
 
     setLoading(true);
     Promise.all([
-      fetch(`/api/resumo?month=${month}&year=${year}&groupId=${currentGroup.id}`).then((r) => r.json()),
-      fetch(`/api/pagamentos/pendentes?groupId=${currentGroup.id}`).then((r) => r.json()),
+      fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`).then((r) => r.json()),
+      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`).then((r) => r.json()),
     ]).then(([summaryData, pending]) => {
       setSummary(summaryData);
       setPendingData(pending);
@@ -60,14 +60,14 @@ function ResumoContent() {
   async function handleMarkPaid() {
     if (!currentGroup) return;
     setPaying(true);
-    await fetch("/api/pagamentos", {
+    await fetch("/api/payments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ month, year, groupId: currentGroup.id }),
     });
     const [summaryRes, pendingRes] = await Promise.all([
-      fetch(`/api/resumo?month=${month}&year=${year}&groupId=${currentGroup.id}`),
-      fetch(`/api/pagamentos/pendentes?groupId=${currentGroup.id}`),
+      fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`),
+      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`),
     ]);
     setSummary(await summaryRes.json());
     setPendingData(await pendingRes.json());
@@ -78,14 +78,14 @@ function ResumoContent() {
     if (!currentGroup) return;
     if (!confirm("Confirma que voce ja transferiu o valor total pendente?")) return;
     setPayingAll(true);
-    await fetch("/api/pagamentos/pagar-tudo", {
+    await fetch("/api/payments/pagar-tudo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ groupId: currentGroup.id }),
     });
     const [summaryRes, pendingRes] = await Promise.all([
-      fetch(`/api/resumo?month=${month}&year=${year}&groupId=${currentGroup.id}`),
-      fetch(`/api/pagamentos/pendentes?groupId=${currentGroup.id}`),
+      fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`),
+      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`),
     ]);
     setSummary(await summaryRes.json());
     setPendingData(await pendingRes.json());
@@ -176,10 +176,10 @@ function ResumoContent() {
   );
 }
 
-export default function ResumoPage() {
+export default function SummaryPage() {
   return (
     <Suspense fallback={<p className="text-center text-muted-foreground py-8">Carregando...</p>}>
-      <ResumoContent />
+      <SummaryContent />
     </Suspense>
   );
 }

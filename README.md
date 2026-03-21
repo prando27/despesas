@@ -1,94 +1,94 @@
 # Racha Conta
 
-App para dividir despesas compartilhadas entre membros de um grupo. Ideal para famílias ou roommates que precisam rachar custos mensais.
+Shared expense splitting app for group members. Built for families or roommates who need to split monthly costs.
 
 ## Features
 
-- Login com email/senha (Google OAuth opcional)
-- Cadastro apenas por convite (sem cadastro aberto)
-- Grupos com convite por código
-- Lançamento de despesas com múltiplos itens
-- Upload de cupom com extração automática via IA (OCR)
-- Resumo mensal com divisão igualitária e settlement
-- Membros vinculados — outra pessoa pode lançar despesas que contam como suas
-- Interface mobile-friendly
+- Email/password login (optional Google OAuth)
+- Invite-only signup (no open registration)
+- Groups with invite codes
+- Expense tracking with multiple items per entry
+- Receipt upload with AI-powered item extraction (OCR)
+- Monthly summary with equal split and settlement
+- Linked members — another person can log expenses that count as yours
+- Mobile-friendly interface
 
-## Setup local
+## Local Setup
 
-### Pré-requisitos
+### Prerequisites
 
 - Node.js 20+
-- Docker e Docker Compose
+- Docker and Docker Compose
 
-### Instalação
+### Installation
 
 ```bash
-# Clonar e instalar dependências
+# Clone and install dependencies
 git clone git@github.com:prando27/despesas.git
 cd despesas
 npm install
 
-# Copiar env vars
+# Copy env vars
 cp .env.example .env
-# Editar .env com suas chaves (BETTER_AUTH_SECRET, etc)
+# Edit .env with your keys (BETTER_AUTH_SECRET, etc)
 
-# Subir PostgreSQL + MinIO
+# Start PostgreSQL + MinIO
 docker compose up -d
 
-# Rodar migrations e seed
+# Run migrations and seed
 npx prisma migrate dev
 npm run seed
 
-# Iniciar dev server
+# Start dev server
 npm run dev
 ```
 
-Acesse http://localhost:3000. Login: `prando27@gmail.com` / `12345678`
+Access http://localhost:3000. Login: `prando27@gmail.com` / `12345678`
 
-## Deploy no Railway
+## Railway Deploy
 
-Plano completo em `plan/railway-deploy.md`.
+Full plan in `plan/railway-deploy.md`.
 
-### Serviços necessários
+### Required Services
 
-1. **Web App** — service from GitHub repo (usa o Dockerfile)
-2. **PostgreSQL** — plugin gerenciado
-3. **Storage Bucket** — bucket S3-compatible nativo do Railway
+1. **Web App** — service from GitHub repo (uses Dockerfile)
+2. **PostgreSQL** — managed plugin
+3. **Storage Bucket** — S3-compatible native Railway bucket
 
-### Variáveis de ambiente (aba Variables do serviço web)
+### Environment Variables (web service Variables tab)
 
-| Variável | Valor |
+| Variable | Value |
 |---|---|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | `https://seu-app.up.railway.app` |
-| `NEXT_PUBLIC_BETTER_AUTH_URL` | `https://seu-app.up.railway.app` |
+| `BETTER_AUTH_URL` | `https://your-app.up.railway.app` |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | `https://your-app.up.railway.app` |
 | `BUCKET_NAME` | `${{Bucket.BUCKET}}` |
 | `BUCKET_REGION` | `${{Bucket.REGION}}` |
 | `BUCKET_ENDPOINT` | `${{Bucket.ENDPOINT}}` |
 | `BUCKET_ACCESS_KEY_ID` | `${{Bucket.ACCESS_KEY_ID}}` |
 | `BUCKET_SECRET_ACCESS_KEY` | `${{Bucket.SECRET_ACCESS_KEY}}` |
 | `BUCKET_FORCE_PATH_STYLE` | `false` |
-| `OCR_PROVIDER` | `openai` ou `anthropic` |
-| `OPENAI_API_KEY` | sua key |
+| `OCR_PROVIDER` | `openai` or `anthropic` |
+| `OPENAI_API_KEY` | your key |
 
-### Gotchas importantes
+### Important Gotchas
 
-- **`NEXT_PUBLIC_BETTER_AUTH_URL`** — é inlined no build do Next.js. O Dockerfile usa `ARG` para recebê-la no build time. O Railway passa automaticamente as variáveis do serviço como build args. Se a URL mudar, é preciso redeployar.
-- **`.dockerignore`** — exclui o `.env` local para não sobrescrever as env vars do Railway no build.
-- **`BUCKET_FORCE_PATH_STYLE`** — deve ser `false` no Railway (virtual-hosted-style). Localmente com MinIO fica `true` (default).
-- **Prisma CLI no Docker** — o runner stage instala `prisma` via npm (não copia de node_modules) para garantir todas as dependências transitivas.
+- **`NEXT_PUBLIC_BETTER_AUTH_URL`** — inlined at Next.js build time. The Dockerfile uses `ARG` to receive it. Railway passes service variables as build args automatically. If the URL changes, you need to redeploy.
+- **`.dockerignore`** — excludes local `.env` to avoid overwriting Railway env vars at build time.
+- **`BUCKET_FORCE_PATH_STYLE`** — must be `false` on Railway (virtual-hosted-style). Locally with MinIO it's `true` (default).
+- **Prisma CLI in Docker** — the runner stage installs `prisma` via npm (not copied from node_modules) to ensure all transitive dependencies.
 
-### Seed em produção
+### Production Seed
 
-Com a URL pública do banco do Railway:
+With the Railway database public URL:
 
 ```bash
 DATABASE_URL="postgresql://..." npx prisma migrate deploy
 DATABASE_URL="postgresql://..." npx tsx prisma/seed.ts
 ```
 
-Ou via Railway CLI:
+Or via Railway CLI:
 
 ```bash
 railway login

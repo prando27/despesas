@@ -25,13 +25,13 @@ export default function LoginPage() {
     if (result.error) {
       setError(result.error.message || "Email ou senha inválidos");
     } else {
-      router.push("/despesas");
+      router.push("/expenses");
     }
     setLoading(false);
   }
 
   async function handleGoogleLogin() {
-    await signIn.social({ provider: "google", callbackURL: "/despesas" });
+    await signIn.social({ provider: "google", callbackURL: "/expenses" });
   }
 
   return (

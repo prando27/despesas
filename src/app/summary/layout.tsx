@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
 
-export default function GrupoConfigLayout({ children }: { children: React.ReactNode }) {
+export default function SummaryLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Suspense>

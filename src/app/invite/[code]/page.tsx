@@ -11,7 +11,7 @@ interface GroupInfo {
   countAsName: string | null;
 }
 
-export default function ConvitePage() {
+export default function InvitePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -22,7 +22,7 @@ export default function ConvitePage() {
   const [error, setError] = useState("");
   const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
 
-  const conviteUrl = `/convite/${code}${countAsId ? `?vinculo=${countAsId}` : ""}`;
+  const inviteUrl = `/invite/${code}${countAsId ? `?vinculo=${countAsId}` : ""}`;
 
   useEffect(() => {
     async function fetchGroupInfo() {
@@ -37,8 +37,7 @@ export default function ConvitePage() {
 
   async function handleJoin() {
     if (!session) {
-      // Redirecionar para cadastro com redirect de volta
-      router.push(`/cadastro?redirect=${encodeURIComponent(conviteUrl)}`);
+      router.push(`/signup?redirect=${encodeURIComponent(inviteUrl)}`);
       return;
     }
 
@@ -54,9 +53,9 @@ export default function ConvitePage() {
     const data = await res.json();
 
     if (res.ok) {
-      router.push("/despesas");
+      router.push("/expenses");
     } else if (res.status === 409) {
-      router.push("/despesas");
+      router.push("/expenses");
     } else {
       setError(data.error || "Erro ao entrar no grupo");
     }

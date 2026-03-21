@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function NovoGrupoPage() {
+export default function NewGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -27,7 +27,7 @@ export default function NovoGrupoPage() {
     });
 
     if (res.ok) {
-      router.push("/despesas");
+      router.push("/expenses");
     } else {
       const data = await res.json();
       setError(data.error || "Erro ao criar grupo");
@@ -47,7 +47,7 @@ export default function NovoGrupoPage() {
     });
 
     if (res.ok) {
-      router.push("/despesas");
+      router.push("/expenses");
     } else {
       const data = await res.json();
       setError(data.error || "Erro ao entrar no grupo");

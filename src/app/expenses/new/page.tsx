@@ -15,7 +15,7 @@ interface Item {
   value: number;
 }
 
-export default function NovaDespesaPage() {
+export default function NewExpensePage() {
   const router = useRouter();
   const { currentGroup, loading } = useGroup();
   const [description, setDescription] = useState("");
@@ -67,7 +67,7 @@ export default function NovaDespesaPage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const res = await fetch("/api/despesas", {
+      const res = await fetch("/api/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,7 +83,7 @@ export default function NovaDespesaPage() {
       clearTimeout(timeout);
 
       if (res.ok) {
-        router.push("/despesas");
+        router.push("/expenses");
         return;
       }
 

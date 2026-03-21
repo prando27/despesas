@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
 
-export default function GrupoConfigPage() {
+export default function GroupConfigPage() {
   const { currentGroup, loading, refetch } = useGroup();
   const { data: session } = useSession();
   const [saving, setSaving] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function GrupoConfigPage() {
   }
 
   function getInviteLink(countAsId?: string) {
-    const base = `${window.location.origin}/convite/${currentGroup!.inviteCode}`;
+    const base = `${window.location.origin}/invite/${currentGroup!.inviteCode}`;
     return countAsId ? `${base}?vinculo=${countAsId}` : base;
   }
 

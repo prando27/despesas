@@ -9,7 +9,7 @@ export function middleware(req: NextRequest) {
   }
 
   // Public pages
-  if (pathname.startsWith("/login") || pathname.startsWith("/cadastro") || pathname.startsWith("/convite")) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/invite")) {
     return NextResponse.next();
   }
 

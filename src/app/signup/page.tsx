@@ -9,11 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function CadastroForm() {
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
-  const isFromInvite = redirect?.startsWith("/convite/");
+  const isFromInvite = redirect?.startsWith("/invite/");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +51,7 @@ function CadastroForm() {
     if (result.error) {
       setError(result.error.message || "Erro ao criar conta");
     } else {
-      router.push(redirect || "/despesas");
+      router.push(redirect || "/expenses");
     }
     setLoading(false);
   }
@@ -91,11 +91,11 @@ function CadastroForm() {
   );
 }
 
-export default function CadastroPage() {
+export default function SignupPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
-        <CadastroForm />
+        <SignupForm />
       </Suspense>
     </div>
   );

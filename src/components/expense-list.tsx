@@ -13,7 +13,7 @@ interface ExpenseListProps {
 
 function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
   const [open, setOpen] = useState(false);
-  const url = `/api/despesas/receipt?key=${encodeURIComponent(receiptKey)}`;
+  const url = `/api/expenses/receipt?key=${encodeURIComponent(receiptKey)}`;
 
   return (
     <div>
