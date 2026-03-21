@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MONTH_NAMES } from "@/lib/types";
 
@@ -33,6 +34,9 @@ export function MonthPicker({ month, year, onChangeMonth, onSetMonthYear }: Mont
     setOpen(false);
   }
 
+  const now = new Date();
+  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
+
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
@@ -41,13 +45,19 @@ export function MonthPicker({ month, year, onChangeMonth, onSetMonthYear }: Mont
         </Button>
         <button
           onClick={handleOpen}
-          className="text-lg font-semibold px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+          className="text-lg font-semibold px-3 py-1 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors flex items-center gap-1"
         >
           {MONTH_NAMES[month - 1]} {year}
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
         <Button variant="outline" size="sm" onClick={() => onChangeMonth(1)}>
           &gt;
         </Button>
+        {!isCurrentMonth && (
+          <Button variant="ghost" size="sm" onClick={handleToday} title="Voltar ao mês atual">
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {open && (
