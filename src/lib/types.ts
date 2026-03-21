@@ -54,8 +54,7 @@ export const createExpenseSchema = z.object({
   date: z.string().min(1),
   groupId: z.string().min(1),
   items: z.array(expenseItemSchema).min(1),
-  receiptImage: z.string().optional(),
-  receiptMediaType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
+  receiptKey: z.string().optional(),
 });
 
 export const updateExpenseSchema = z.object({

@@ -20,8 +20,8 @@ export default function NovaDespesaPage() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<Item[]>([{ description: "", value: 0 }]);
-  const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
-  const [receiptMediaType, setReceiptMediaType] = useState<string>("image/jpeg");
+  const [receiptKey, setReceiptKey] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,6 +41,25 @@ export default function NovaDespesaPage() {
 
   function removeItem(index: number) {
     setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleImageReady(base64: string, mediaType: string) {
+    // Upload imediatamente em background
+    setUploading(true);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, mediaType }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReceiptKey(data.key);
+      }
+    } catch {
+      // Upload falhou silenciosamente — despesa será salva sem cupom
+    }
+    setUploading(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +87,7 @@ export default function NovaDespesaPage() {
           date,
           groupId: currentGroup.id,
           items: validItems,
-          ...(receiptBase64 ? { receiptImage: receiptBase64, receiptMediaType } : {}),
+          ...(receiptKey ? { receiptKey } : {}),
         }),
       });
 
@@ -99,11 +118,10 @@ export default function NovaDespesaPage() {
             onItemsExtracted={handleItemsExtracted}
             onDateExtracted={(d) => setDate(d)}
             onDescriptionExtracted={(d) => setDescription(d)}
-            onImageReady={(base64, mediaType) => {
-              setReceiptBase64(base64);
-              setReceiptMediaType(mediaType);
-            }}
+            onImageReady={handleImageReady}
           />
+          {uploading && <p className="text-xs text-muted-foreground mt-2">Enviando foto...</p>}
+          {receiptKey && !uploading && <p className="text-xs text-emerald-600 mt-2">Foto salva</p>}
         </CardContent>
       </Card>
 
@@ -169,8 +187,8 @@ export default function NovaDespesaPage() {
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 
-            <Button type="submit" className="w-full" disabled={saving || loading}>
-              {saving ? "Salvando..." : "Salvar despesa"}
+            <Button type="submit" className="w-full" disabled={saving || loading || uploading}>
+              {saving ? "Salvando..." : uploading ? "Aguardando foto..." : "Salvar despesa"}
             </Button>
           </CardContent>
         </Card>

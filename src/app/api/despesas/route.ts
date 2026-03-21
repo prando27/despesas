@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createExpenseSchema } from "@/lib/types";
-import { uploadReceipt } from "@/lib/storage";
 
 export async function GET(req: NextRequest) {
   const session = await getSession(req.headers);
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { description, date, items, groupId } = parsed.data;
+  const { description, date, items, groupId, receiptKey } = parsed.data;
 
   // Verify user is member of the group
   const membership = await prisma.groupMember.findUnique({
@@ -49,22 +48,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Você não é membro deste grupo" }, { status: 403 });
   }
 
-  let receiptUrl: string | null = null;
-  if (parsed.data.receiptImage && parsed.data.receiptMediaType) {
-    try {
-      receiptUrl = await uploadReceipt(session.user.id, parsed.data.receiptImage, parsed.data.receiptMediaType);
-    } catch (err) {
-      console.error("Erro ao fazer upload do cupom:", err);
-      // Salva a despesa mesmo sem o cupom
-    }
-  }
-
   try {
     const expense = await prisma.expense.create({
       data: {
         description,
         date: new Date(date),
-        receiptUrl,
+        receiptUrl: receiptKey || null,
         createdById: session.user.id,
         groupId,
         items: {
