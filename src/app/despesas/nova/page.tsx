@@ -124,8 +124,8 @@ export default function NovaDespesaPage() {
             <CardTitle className="text-base">Dados da despesa</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <div className="space-y-2 flex-1 min-w-0">
+            <div className="space-y-4">
+              <div className="space-y-2">
                 <Label htmlFor="description">Descricao</Label>
                 <Input
                   id="description"
@@ -135,7 +135,7 @@ export default function NovaDespesaPage() {
                   required
                 />
               </div>
-              <div className="space-y-2 w-[140px] shrink-0">
+              <div className="space-y-2">
                 <Label htmlFor="date">Data</Label>
                 <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
               </div>
