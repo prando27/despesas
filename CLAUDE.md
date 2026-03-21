@@ -32,6 +32,7 @@ npx prisma migrate dev   # Migrations
 - `NEXT_PUBLIC_` env vars são inlined no build — usar `ARG` no Dockerfile
 - `.dockerignore` exclui `.env` para não sobrescrever env vars do Railway
 - Inputs devem ter `font-size: 16px` para evitar zoom no Safari iOS
+- `input[type="date"]` precisa de `appearance: none` + `max-width: 100%` no Safari iOS (senão ultrapassa o container)
 
 ## Estrutura
 
