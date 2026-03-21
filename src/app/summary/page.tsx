@@ -50,7 +50,7 @@ function SummaryContent() {
     setLoading(true);
     Promise.all([
       fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`).then((r) => r.json()),
-      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`).then((r) => r.json()),
+      fetch(`/api/payments/pending?groupId=${currentGroup.id}`).then((r) => r.json()),
     ]).then(([summaryData, pending]) => {
       setSummary(summaryData);
       setPendingData(pending);
@@ -67,7 +67,7 @@ function SummaryContent() {
     });
     const [summaryRes, pendingRes] = await Promise.all([
       fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`),
-      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`),
+      fetch(`/api/payments/pending?groupId=${currentGroup.id}`),
     ]);
     setSummary(await summaryRes.json());
     setPendingData(await pendingRes.json());
@@ -78,14 +78,14 @@ function SummaryContent() {
     if (!currentGroup) return;
     if (!confirm("Confirma que voce ja transferiu o valor total pendente?")) return;
     setPayingAll(true);
-    await fetch("/api/payments/pagar-tudo", {
+    await fetch("/api/payments/pay-all", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ groupId: currentGroup.id }),
     });
     const [summaryRes, pendingRes] = await Promise.all([
       fetch(`/api/summary?month=${month}&year=${year}&groupId=${currentGroup.id}`),
-      fetch(`/api/payments/pendentes?groupId=${currentGroup.id}`),
+      fetch(`/api/payments/pending?groupId=${currentGroup.id}`),
     ]);
     setSummary(await summaryRes.json());
     setPendingData(await pendingRes.json());
