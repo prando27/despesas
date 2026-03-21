@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExpenseList } from "@/components/expense-list";
 import { MonthPicker } from "@/components/month-picker";
@@ -9,7 +9,7 @@ import { useGroup } from "@/hooks/use-group";
 import { useSession } from "@/lib/auth-client";
 import type { Expense } from "@/lib/types";
 
-export default function DespesasPage() {
+function DespesasContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const { currentGroup, loading: groupLoading } = useGroup();
@@ -59,5 +59,13 @@ export default function DespesasPage() {
         <ExpenseList expenses={expenses} currentUserId={session?.user?.id} onDelete={handleDelete} />
       )}
     </div>
+  );
+}
+
+export default function DespesasPage() {
+  return (
+    <Suspense fallback={<p className="text-center text-muted-foreground py-8">Carregando...</p>}>
+      <DespesasContent />
+    </Suspense>
   );
 }

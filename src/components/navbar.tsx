@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
@@ -48,7 +48,16 @@ const tabs = [
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
+
+  // Preserve month/year params when navigating between pages
+  function hrefWithParams(base: string) {
+    const m = searchParams.get("m");
+    const y = searchParams.get("y");
+    if (m && y) return `${base}?m=${m}&y=${y}`;
+    return base;
+  }
 
   async function handleLogout() {
     await signOut();
@@ -99,11 +108,12 @@ export function Navbar() {
           {tabs.map((tab) => {
             const isActive = pathname === tab.href || (tab.href === "/despesas" && pathname === "/despesas/nova");
             const Icon = tab.icon;
+            const href = (tab.href === "/despesas" || tab.href === "/resumo") ? hrefWithParams(tab.href) : tab.href;
 
             return (
               <Link
                 key={tab.href}
-                href={tab.href}
+                href={href}
                 className={`flex flex-col items-center gap-1 py-2 px-3 ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}

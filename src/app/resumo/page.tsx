@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MonthSummary } from "@/components/month-summary";
 import { MonthPicker } from "@/components/month-picker";
@@ -27,7 +27,7 @@ interface PendingData {
   totalPending: number;
 }
 
-export default function ResumoPage() {
+function ResumoContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const { currentGroup, loading: groupLoading } = useGroup();
@@ -173,5 +173,13 @@ export default function ResumoPage() {
         <p className="text-muted-foreground">Sem dados para este mes.</p>
       )}
     </div>
+  );
+}
+
+export default function ResumoPage() {
+  return (
+    <Suspense fallback={<p className="text-center text-muted-foreground py-8">Carregando...</p>}>
+      <ResumoContent />
+    </Suspense>
   );
 }
