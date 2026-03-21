@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command' | { read -r cmd; if echo \"$cmd\" | grep -q 'git push'; then npm run build > /dev/null 2>&1 || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Build failed. Fix errors before pushing.\"}}'; fi; }",
+            "command": "jq -r '.tool_input.command' | { read -r cmd; if echo \"$cmd\" | grep -q 'git push'; then echo '🔨 Hook pre-push: rodando build...' >&2; if npm run build > /dev/null 2>&1; then echo '✅ Build OK — push liberado.' >&2; else echo '❌ Build falhou — push bloqueado.' >&2; echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Build failed. Fix errors before pushing.\"}}'; fi; fi; }",
             "timeout": 120,
             "statusMessage": "Verificando build antes do push..."
           }
