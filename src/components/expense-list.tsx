@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Expense } from "@/lib/types";
@@ -13,7 +13,16 @@ interface ExpenseListProps {
 
 function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
   const [open, setOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const url = `/api/expenses/receipt?key=${encodeURIComponent(receiptKey)}`;
+
+  useEffect(() => {
+    if (fullscreen) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [fullscreen]);
 
   return (
     <div>
@@ -28,7 +37,39 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
       </Button>
       {open && (
         <div className="mt-2">
-          <img src={url} alt="Cupom" className="max-h-72 rounded border" />
+          <img
+            src={url}
+            alt="Cupom"
+            className="max-h-72 rounded border cursor-zoom-in"
+            onClick={() => { setFullscreen(true); setZoomed(false); }}
+          />
+        </div>
+      )}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl font-light z-10 w-10 h-10 flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
+          >
+            ✕
+          </button>
+          <div
+            className={`w-full h-full ${zoomed ? "overflow-auto" : "flex items-center justify-center"}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={url}
+              alt="Cupom"
+              className={zoomed
+                ? "max-w-none cursor-zoom-out"
+                : "max-w-full max-h-full object-contain cursor-zoom-in"
+              }
+              onClick={() => setZoomed(!zoomed)}
+            />
+          </div>
         </div>
       )}
     </div>
