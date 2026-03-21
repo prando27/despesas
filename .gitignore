@@ -33,7 +33,7 @@ yarn-error.log*
 .playwright-mcp/
 
 # claude
-.claude/
+.claude/settings.local.json
 .agents/
 
 # vercel
