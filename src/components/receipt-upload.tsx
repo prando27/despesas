@@ -15,6 +15,43 @@ interface ReceiptUploadProps {
   onImageReady: (base64: string, mediaType: string) => void;
 }
 
+const MAX_WIDTH = 1200;
+const MAX_HEIGHT = 1600;
+const QUALITY = 0.8;
+
+function compressImage(file: File): Promise<{ base64: string; mediaType: string; dataUrl: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        let { width, height } = img;
+
+        // Scale down if needed
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", QUALITY);
+        const base64 = dataUrl.split(",")[1];
+
+        resolve({ base64, mediaType: "image/jpeg", dataUrl });
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady }: ReceiptUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,16 +59,10 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setPreview(dataUrl);
-      const base64 = dataUrl.split(",")[1];
-      const mediaType = file.type || "image/jpeg";
-      onImageReady(base64, mediaType);
-    };
-    reader.readAsDataURL(file);
+  async function handleFile(file: File) {
+    const { base64, mediaType, dataUrl } = await compressImage(file);
+    setPreview(dataUrl);
+    onImageReady(base64, mediaType);
   }
 
   async function handleExtract() {
@@ -41,12 +72,11 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
 
     try {
       const base64 = preview.split(",")[1];
-      const mediaType = preview.startsWith("data:image/png") ? "image/png" : "image/jpeg";
 
       const res = await fetch("/api/ocr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mediaType }),
+        body: JSON.stringify({ image: base64, mediaType: "image/jpeg" }),
       });
 
       if (!res.ok) throw new Error("Erro ao processar imagem");
