@@ -26,15 +26,25 @@ Retorne APENAS um JSON válido neste formato, sem markdown:
 Se não conseguir ler algum item, pule-o. Se não encontrar a data, use null para o campo date.
 Se não for um cupom fiscal, retorne {"items": [], "date": null, "description": null}.`;
 
+function normalizeDate(date: string | null): string | null {
+  if (!date) return null;
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  // DD/MM/YYYY or DD-MM-YYYY
+  const match = date.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  return null;
+}
+
 function parseReceiptData(text: string): ReceiptData {
   try {
     const parsed = JSON.parse(text);
-    return { items: parsed.items ?? [], date: parsed.date ?? null, description: parsed.description ?? null };
+    return { items: parsed.items ?? [], date: normalizeDate(parsed.date), description: parsed.description ?? null };
   } catch {
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
       const parsed = JSON.parse(match[0]);
-      return { items: parsed.items ?? [], date: parsed.date ?? null, description: parsed.description ?? null };
+      return { items: parsed.items ?? [], date: normalizeDate(parsed.date), description: parsed.description ?? null };
     }
     return { items: [], date: null, description: null };
   }
