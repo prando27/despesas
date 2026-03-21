@@ -44,8 +44,8 @@ export default function NovaDespesaPage() {
   }
 
   async function handleImageReady(base64: string, mediaType: string) {
-    // Upload imediatamente em background
     setUploading(true);
+    setError("");
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
@@ -55,9 +55,11 @@ export default function NovaDespesaPage() {
       if (res.ok) {
         const data = await res.json();
         setReceiptKey(data.key);
+      } else {
+        setError("Erro ao enviar foto. A despesa será salva sem cupom.");
       }
     } catch {
-      // Upload falhou silenciosamente — despesa será salva sem cupom
+      setError("Erro ao enviar foto. A despesa será salva sem cupom.");
     }
     setUploading(false);
   }
@@ -78,7 +80,11 @@ export default function NovaDespesaPage() {
     }
 
     setSaving(true);
+    setError("");
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch("/api/despesas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,16 +95,24 @@ export default function NovaDespesaPage() {
           items: validItems,
           ...(receiptKey ? { receiptKey } : {}),
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (res.ok) {
         router.push("/despesas");
-      } else {
-        const data = await res.json().catch(() => null);
-        setError(data?.error || "Erro ao salvar despesa.");
+        return;
       }
-    } catch {
-      setError("Erro de conexão. Tente novamente.");
+
+      const data = await res.json().catch(() => null);
+      setError(data?.error || `Erro ao salvar (${res.status}). Tente novamente.`);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Tempo esgotado. Verifique sua conexão e tente novamente.");
+      } else {
+        setError("Erro de conexão. Tente novamente.");
+      }
     }
     setSaving(false);
   }
