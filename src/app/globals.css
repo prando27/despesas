@@ -46,9 +46,15 @@
 
   /* Fix Safari iOS date input overflowing container */
   input[type="date"] {
-    -webkit-appearance: none;
-    appearance: none;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  /* Safari-only: remove native styling that causes overflow */
+  @supports (-webkit-touch-callout: none) {
+    input[type="date"] {
+      -webkit-appearance: none;
+      appearance: none;
+    }
   }
 }
