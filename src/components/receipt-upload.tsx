@@ -15,6 +15,7 @@ interface ReceiptUploadProps {
   onImageReady: (base64: string, mediaType: string) => void;
   onLoadingChange?: (loading: boolean) => void;
   onError?: (error: string | null) => void;
+  onLowConfidence?: (warning: string) => void;
 }
 
 export interface ReceiptUploadHandle {
@@ -58,7 +59,7 @@ function compressImage(file: File): Promise<{ base64: string; mediaType: string;
   });
 }
 
-export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>(function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange, onError }, ref) {
+export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>(function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange, onError, onLowConfidence }, ref) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +91,18 @@ export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>
       if (!res.ok) throw new Error("Erro ao processar imagem");
 
       const data = await res.json();
+
+      if (data.confidence === "none") {
+        const msg = data.rejectionReason || "Não foi possível ler o cupom. Tente uma foto mais nítida.";
+        setError(msg);
+        onError?.(msg);
+        return;
+      }
+
+      if (data.confidence === "low") {
+        onLowConfidence?.("Alguns valores podem estar incorretos. Verifique antes de salvar.");
+      }
+
       if (data.items?.length > 0) {
         onItemsExtracted(data.items);
       } else {

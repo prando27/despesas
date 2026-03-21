@@ -26,11 +26,13 @@ export default function NewExpensePage() {
   const [saving, setSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [lowConfidenceWarning, setLowConfidenceWarning] = useState<string | null>(null);
   const [error, setError] = useState("");
   const receiptRef = useRef<ReceiptUploadHandle>(null);
 
   function handleItemsExtracted(extracted: Item[]) {
     setItems(extracted);
+    setLowConfidenceWarning(null);
   }
 
   function updateItem(index: number, field: keyof Item, value: string | number) {
@@ -132,6 +134,7 @@ export default function NewExpensePage() {
             }}
             onLoadingChange={setExtracting}
             onError={setExtractError}
+            onLowConfidence={setLowConfidenceWarning}
           />
         </CardContent>
       </Card>
@@ -158,6 +161,12 @@ export default function NewExpensePage() {
                 <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
               </div>
             </div>
+
+            {lowConfidenceWarning && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                {lowConfidenceWarning}
+              </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">

@@ -5,10 +5,14 @@ export interface ReceiptItem {
 
 export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
 
+export type ReceiptConfidence = "high" | "low" | "none";
+
 export interface ReceiptData {
   items: ReceiptItem[];
   date: string | null;
   description: string | null;
+  confidence: ReceiptConfidence;
+  rejectionReason: string | null;
 }
 
 export interface ReceiptExtractor {
@@ -20,11 +24,16 @@ const PROMPT = `Analise esta imagem de cupom fiscal brasileiro. Extraia:
 2. A data da compra no formato YYYY-MM-DD
 3. Uma descrição curta e clara da compra (ex: "Cigarro Marlboro", "Compras supermercado", "Medicamentos farmácia")
 
+IMPORTANTE sobre qualidade da imagem:
+- Se a imagem estiver borrada, escura, cortada ou ilegível, NÃO tente adivinhar valores. Retorne confidence "none".
+- Se conseguir ler apenas parcialmente (alguns valores incertos), retorne confidence "low".
+- Se conseguir ler claramente, retorne confidence "high".
+
 Retorne APENAS um JSON válido neste formato, sem markdown:
-{"items": [{"description": "string", "value": number}], "date": "YYYY-MM-DD", "description": "string"}
+{"confidence": "high", "rejectionReason": null, "items": [{"description": "string", "value": number}], "date": "YYYY-MM-DD", "description": "string"}
 
 Se não conseguir ler algum item, pule-o. Se não encontrar a data, use null para o campo date.
-Se não for um cupom fiscal, retorne {"items": [], "date": null, "description": null}.`;
+Se não for um cupom fiscal, retorne {"confidence": "none", "rejectionReason": "A imagem não parece ser um cupom fiscal", "items": [], "date": null, "description": null}.`;
 
 function normalizeDate(date: string | null): string | null {
   if (!date) return null;
@@ -36,17 +45,34 @@ function normalizeDate(date: string | null): string | null {
   return null;
 }
 
+function toConfidence(value: unknown): ReceiptConfidence {
+  if (value === "high" || value === "low" || value === "none") return value;
+  return "high";
+}
+
 function parseReceiptData(text: string): ReceiptData {
   try {
     const parsed = JSON.parse(text);
-    return { items: parsed.items ?? [], date: normalizeDate(parsed.date), description: parsed.description ?? null };
+    return {
+      items: parsed.items ?? [],
+      date: normalizeDate(parsed.date),
+      description: parsed.description ?? null,
+      confidence: toConfidence(parsed.confidence),
+      rejectionReason: parsed.rejectionReason ?? null,
+    };
   } catch {
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
       const parsed = JSON.parse(match[0]);
-      return { items: parsed.items ?? [], date: normalizeDate(parsed.date), description: parsed.description ?? null };
+      return {
+        items: parsed.items ?? [],
+        date: normalizeDate(parsed.date),
+        description: parsed.description ?? null,
+        confidence: toConfidence(parsed.confidence),
+        rejectionReason: parsed.rejectionReason ?? null,
+      };
     }
-    return { items: [], date: null, description: null };
+    return { items: [], date: null, description: null, confidence: "none", rejectionReason: "Não foi possível interpretar a resposta" };
   }
 }
 
