@@ -2,7 +2,19 @@ import { PrismaClient, Prisma } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-export const prisma = globalForPrisma.prisma || new PrismaClient();
+function createPrismaClient() {
+  // Append connection pool params if not already present
+  let url = process.env.DATABASE_URL || "";
+  if (url && !url.includes("connection_limit")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url += `${separator}connection_limit=5&pool_timeout=10&connect_timeout=10`;
+  }
+  return new PrismaClient({
+    datasources: { db: { url } },
+  });
+}
+
+export const prisma = globalForPrisma.prisma || createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
