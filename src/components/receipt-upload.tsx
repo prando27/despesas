@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useImperativeHandle, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ReceiptItem {
@@ -14,6 +14,11 @@ interface ReceiptUploadProps {
   onDescriptionExtracted: (description: string) => void;
   onImageReady: (base64: string, mediaType: string) => void;
   onLoadingChange?: (loading: boolean) => void;
+  onError?: (error: string | null) => void;
+}
+
+export interface ReceiptUploadHandle {
+  extract: () => void;
 }
 
 const MAX_WIDTH = 1200;
@@ -53,7 +58,7 @@ function compressImage(file: File): Promise<{ base64: string; mediaType: string;
   });
 }
 
-export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange }: ReceiptUploadProps) {
+export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>(function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange, onError }, ref) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +76,7 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
     setLoading(true);
     onLoadingChange?.(true);
     setError(null);
+    onError?.(null);
 
     try {
       const base64 = preview.split(",")[1];
@@ -87,7 +93,9 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
       if (data.items?.length > 0) {
         onItemsExtracted(data.items);
       } else {
-        setError("Nenhum item encontrado no cupom");
+        const msg = "Nenhum item encontrado no cupom";
+        setError(msg);
+        onError?.(msg);
       }
       if (data.date) {
         onDateExtracted(data.date);
@@ -96,12 +104,16 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
         onDescriptionExtracted(data.description);
       }
     } catch {
-      setError("Erro ao extrair itens do cupom");
+      const msg = "Erro ao extrair itens do cupom. Verifique a imagem e tente novamente.";
+      setError(msg);
+      onError?.(msg);
     } finally {
       setLoading(false);
       onLoadingChange?.(false);
     }
   }
+
+  useImperativeHandle(ref, () => ({ extract: handleExtract }));
 
   return (
     <div className="space-y-3">
@@ -144,4 +156,4 @@ export function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescription
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
-}
+});

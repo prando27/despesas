@@ -48,6 +48,26 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        scan: {
+          "0%, 100%": { top: "0%" },
+          "50%": { top: "100%" },
+        },
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "15%, 45%, 75%": { transform: "translateX(-6px)" },
+          "30%, 60%, 90%": { transform: "translateX(6px)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
+      animation: {
+        scan: "scan 2s ease-in-out infinite",
+        shake: "shake 0.5s ease-in-out",
+        "fade-in": "fade-in 0.2s ease-out",
+      },
     },
   },
   plugins: [],
