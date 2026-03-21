@@ -137,7 +137,7 @@ export default function NovaDespesaPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="date">Data</Label>
-                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="max-w-[200px]" />
               </div>
             </div>
 
