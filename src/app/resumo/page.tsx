@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MonthSummary } from "@/components/month-summary";
-import { Button } from "@/components/ui/button";
+import { MonthPicker } from "@/components/month-picker";
 import { useMonthNavigation } from "@/hooks/use-month-navigation";
 import { useGroup } from "@/hooks/use-group";
 import { useSession } from "@/lib/auth-client";
-import { MONTH_NAMES } from "@/lib/types";
 import type { SummaryData } from "@/lib/types";
 
 interface PendingSettlement {
@@ -35,7 +34,7 @@ export default function ResumoPage() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [payingAll, setPayingAll] = useState(false);
-  const { month, year, changeMonth } = useMonthNavigation();
+  const { month, year, changeMonth, setMonthYear } = useMonthNavigation();
 
   const userId = session?.user?.id || "";
 
@@ -148,16 +147,8 @@ export default function ResumoPage() {
       )}
 
       {/* Month navigation */}
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => changeMonth(-1)}>
-          &lt;
-        </Button>
-        <h1 className="text-lg font-semibold">
-          {MONTH_NAMES[month - 1]} {year}
-        </h1>
-        <Button variant="outline" size="sm" onClick={() => changeMonth(1)}>
-          &gt;
-        </Button>
+      <div>
+        <MonthPicker month={month} year={year} onChangeMonth={changeMonth} onSetMonthYear={setMonthYear} />
       </div>
 
       {loading ? (

@@ -15,5 +15,10 @@ export function useMonthNavigation() {
     setYear(y);
   }
 
-  return { month, year, changeMonth };
+  function setMonthYear(m: number, y: number) {
+    setMonth(m);
+    setYear(y);
+  }
+
+  return { month, year, changeMonth, setMonthYear };
 }
