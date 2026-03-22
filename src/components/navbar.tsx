@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useGroup } from "@/hooks/use-group";
 import { Button } from "@/components/ui/button";
 
 function IconList({ className }: { className?: string }) {
@@ -50,6 +51,7 @@ export function Navbar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { groups, currentGroup, setCurrentGroup } = useGroup();
 
   // Preserve month/year params when navigating between pages
   function hrefWithParams(base: string) {
@@ -71,7 +73,22 @@ export function Navbar() {
       {/* Top bar */}
       <nav className="border-b bg-white">
         <div className="mx-auto flex h-12 max-w-4xl items-center justify-between px-4">
-          <span className="font-semibold">Racha Conta</span>
+          {groups.length > 1 ? (
+            <select
+              className="font-semibold bg-transparent border-none text-sm focus:outline-none cursor-pointer pr-1"
+              value={currentGroup?.id || ""}
+              onChange={(e) => {
+                const group = groups.find((g) => g.id === e.target.value);
+                if (group) setCurrentGroup(group);
+              }}
+            >
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="font-semibold">{currentGroup?.name || "Racha Conta"}</span>
+          )}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{session.user.name}</span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
