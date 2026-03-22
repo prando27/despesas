@@ -29,6 +29,7 @@ export interface UserTotal {
   id: string;
   name: string;
   total: number;
+  share: number;
 }
 
 export interface SummaryData {

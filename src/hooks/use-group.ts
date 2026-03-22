@@ -9,12 +9,15 @@ interface GroupMember {
   image: string | null;
   role: string;
   countAsId: string | null;
+  weight: number;
 }
 
 export interface Group {
   id: string;
   name: string;
   inviteCode: string;
+  splitType: string;
+  groupType: string;
   role: string;
   members: GroupMember[];
 }

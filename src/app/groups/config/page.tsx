@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useGroup } from "@/hooks/use-group";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
 
@@ -11,6 +12,7 @@ export default function GroupConfigPage() {
   const { data: session } = useSession();
   const [saving, setSaving] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [savingSplit, setSavingSplit] = useState(false);
 
   if (loading) return <div className="p-4">Carregando...</div>;
   if (!currentGroup) return <div className="p-4">Nenhum grupo encontrado.</div>;
@@ -36,6 +38,31 @@ export default function GroupConfigPage() {
     setSaving(null);
   }
 
+  async function handleSplitTypeChange(splitType: string) {
+    setSavingSplit(true);
+    await fetch("/api/groups", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ groupId: currentGroup!.id, splitType }),
+    });
+    await refetch();
+    setSavingSplit(false);
+  }
+
+  async function handleWeightChange(memberId: string, weight: number) {
+    setSaving(memberId);
+    await fetch("/api/groups", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        groupId: currentGroup!.id,
+        memberWeights: { [memberId]: weight },
+      }),
+    });
+    await refetch();
+    setSaving(null);
+  }
+
   function getInviteLink(countAsId?: string) {
     const base = `${window.location.origin}/invite/${currentGroup!.inviteCode}`;
     return countAsId ? `${base}?vinculo=${countAsId}` : base;
@@ -46,6 +73,8 @@ export default function GroupConfigPage() {
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   }
+
+  const totalWeight = independentMembers.reduce((s, m) => s + (m.weight || 1), 0);
 
   return (
     <div className="space-y-4">
@@ -92,6 +121,74 @@ export default function GroupConfigPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Tipo de divisão */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tipo de divisão</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Button
+                variant={currentGroup.splitType === "equal" ? "default" : "outline"}
+                size="sm"
+                disabled={savingSplit}
+                onClick={() => handleSplitTypeChange("equal")}
+              >
+                Igual
+              </Button>
+              <Button
+                variant={currentGroup.splitType === "weighted" ? "default" : "outline"}
+                size="sm"
+                disabled={savingSplit}
+                onClick={() => handleSplitTypeChange("weighted")}
+              >
+                Por peso
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {currentGroup.splitType === "equal"
+                ? "Total dividido igualmente entre todos os membros."
+                : "Total dividido proporcionalmente ao peso de cada membro."}
+            </p>
+
+            {currentGroup.splitType === "weighted" && (
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs font-medium text-muted-foreground">Peso por membro</p>
+                {independentMembers.map((m) => {
+                  const pct = totalWeight > 0
+                    ? Math.round(((m.weight || 1) / totalWeight) * 100)
+                    : 0;
+                  return (
+                    <div key={m.memberId} className="flex items-center gap-3">
+                      <span className="text-sm flex-1">{m.name}</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="w-20 text-center"
+                        defaultValue={m.weight || 1}
+                        disabled={saving === m.memberId}
+                        onBlur={(e) => {
+                          const v = parseInt(e.target.value);
+                          if (v >= 1 && v !== m.weight) {
+                            handleWeightChange(m.memberId, v);
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground w-12 text-right">{pct}%</span>
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-muted-foreground">
+                  Ex: peso 3 e 2 = 60% e 40%. Peso 1 e 1 = 50% e 50%.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Membros */}
       <Card>

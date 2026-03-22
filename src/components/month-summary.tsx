@@ -24,7 +24,6 @@ function formatBRL(value: number) {
 export function MonthSummary({
   grandTotal, perUser, settlement, isPaid, paidBy, paidAt, currentUserId, onMarkPaid, loading,
 }: MonthSummaryProps) {
-  const shareTotal = perUser.length > 0 ? grandTotal / perUser.length : 0;
   const sorted = [...perUser].sort((a, b) => b.total - a.total);
   const hasSettlement = settlement && settlement.amount > 0;
 
@@ -34,13 +33,17 @@ export function MonthSummary({
       <div className="rounded-xl bg-white border p-5 text-center">
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Total do mes</p>
         <p className="text-3xl font-bold tabular-nums">{formatBRL(grandTotal)}</p>
-        <p className="text-xs text-muted-foreground mt-1">{formatBRL(shareTotal)} por pessoa</p>
+        {sorted.length > 0 && sorted.every((u) => u.share === sorted[0].share) ? (
+          <p className="text-xs text-muted-foreground mt-1">{formatBRL(sorted[0].share)} por pessoa</p>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-1">Divisão por peso</p>
+        )}
       </div>
 
       {/* Per-user breakdown */}
       <div className="grid grid-cols-2 gap-3">
         {sorted.map((u) => {
-          const diff = u.total - shareTotal;
+          const diff = u.total - (u.share || 0);
           const isPositive = diff > 0;
           return (
             <div key={u.id} className="rounded-xl bg-white border p-4">
@@ -106,8 +109,7 @@ export function MonthSummary({
 
           {/* Explanation */}
           <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-            {settlement!.to} gastou {formatBRL(sorted[0]?.total || 0)} e {settlement!.from} gastou {formatBRL(sorted[1]?.total || 0)}.
-            {" "}Dividindo igualmente, {settlement!.from} deve {formatBRL(settlement!.amount)} para {settlement!.to}.
+            {settlement!.from} deve {formatBRL(settlement!.amount)} para {settlement!.to}.
           </p>
 
           {/* Pay button or paid status */}

@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     id: m.group.id,
     name: m.group.name,
     inviteCode: m.group.inviteCode,
+    splitType: m.group.splitType,
+    groupType: m.group.groupType,
     role: m.role,
     members: m.group.members.map((gm) => ({
       memberId: gm.id,
@@ -34,6 +36,7 @@ export async function GET(req: NextRequest) {
       image: gm.user.image,
       role: gm.role,
       countAsId: gm.countAsId,
+      weight: gm.weight,
     })),
   }));
 
