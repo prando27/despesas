@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getSplitStrategy } from "@/lib/split";
+import type { ExpenseWithItems, MemberWithUser } from "@/lib/split";
 
 export async function POST(req: NextRequest) {
   const session = await getSession(req.headers);
@@ -13,51 +15,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "groupId obrigatório" }, { status: 400 });
   }
 
-  const expenses = await prisma.expense.findMany({
-    where: { groupId },
-    include: { items: true, createdBy: { select: { id: true, name: true } } },
-  });
+  const [expenses, payments, members, group] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId },
+      include: { items: true, createdBy: { select: { id: true, name: true } } },
+    }),
+    prisma.monthPayment.findMany({ where: { groupId } }),
+    prisma.groupMember.findMany({
+      where: { groupId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+    prisma.group.findUnique({ where: { id: groupId }, select: { splitType: true } }),
+  ]);
 
-  const payments = await prisma.monthPayment.findMany({ where: { groupId } });
   const paidMap = new Map(payments.map((p) => [`${p.month}-${p.year}`, p.isPaid]));
+  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted") ?? "equal");
+  const membersWithWeight: MemberWithUser[] = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
 
-  const members = await prisma.groupMember.findMany({
-    where: { groupId },
-    include: { user: { select: { id: true, name: true } } },
-  });
-
-  const monthlyTotals: Record<string, Record<string, { name: string; total: number }>> = {};
+  // Group expenses by month
+  const monthlyExpenses: Record<string, ExpenseWithItems[]> = {};
   for (const e of expenses) {
     const d = new Date(e.date);
     const key = `${d.getMonth() + 1}-${d.getFullYear()}`;
-    if (!monthlyTotals[key]) monthlyTotals[key] = {};
-    if (!monthlyTotals[key][e.createdById]) {
-      monthlyTotals[key][e.createdById] = { name: e.createdBy.name, total: 0 };
-    }
-    monthlyTotals[key][e.createdById].total += e.items.reduce((s, i) => s + Number(i.value), 0);
+    if (!monthlyExpenses[key]) monthlyExpenses[key] = [];
+    monthlyExpenses[key].push(e);
   }
 
   const upserts: { month: number; year: number; paidBy: string }[] = [];
 
-  for (const [key, userTotals] of Object.entries(monthlyTotals)) {
+  for (const [key, monthExpenses] of Object.entries(monthlyExpenses)) {
     if (paidMap.get(key)) continue;
 
     const [monthStr, yearStr] = key.split("-");
+    const result = strategy.calculate(monthExpenses, membersWithWeight);
 
-    for (const m of members) {
-      if (!userTotals[m.userId]) userTotals[m.userId] = { name: m.user.name, total: 0 };
-    }
-
-    const users = Object.entries(userTotals).map(([id, data]) => ({ id, ...data }));
-    users.sort((a, b) => b.total - a.total);
-
-    if (users.length >= 2) {
-      const n = users.length;
-      const share = users.reduce((s, u) => s + u.total, 0) / n;
-      const debtor = users[users.length - 1];
-      if (debtor.total < share) {
-        upserts.push({ month: parseInt(monthStr), year: parseInt(yearStr), paidBy: debtor.name });
-      }
+    if (result.settlements.length > 0) {
+      // Use first debtor's name as paidBy
+      upserts.push({
+        month: parseInt(monthStr),
+        year: parseInt(yearStr),
+        paidBy: result.settlements[0].from,
+      });
     }
   }
 

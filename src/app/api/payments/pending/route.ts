@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getSplitStrategy } from "@/lib/split";
+import type { ExpenseWithItems, MemberWithUser } from "@/lib/split";
 
 export async function GET(req: NextRequest) {
   const session = await getSession(req.headers);
@@ -13,69 +15,56 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "groupId obrigatório" }, { status: 400 });
   }
 
-  const expenses = await prisma.expense.findMany({
-    where: { groupId },
-    include: { items: true, createdBy: { select: { id: true, name: true } } },
-  });
+  const [expenses, payments, members, group] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId },
+      include: { items: true, createdBy: { select: { id: true, name: true } } },
+    }),
+    prisma.monthPayment.findMany({ where: { groupId } }),
+    prisma.groupMember.findMany({
+      where: { groupId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+    prisma.group.findUnique({ where: { id: groupId }, select: { splitType: true } }),
+  ]);
 
-  const payments = await prisma.monthPayment.findMany({ where: { groupId } });
   const paidMap = new Map(payments.map((p) => [`${p.month}-${p.year}`, p.isPaid]));
+  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted") ?? "equal");
+  const membersWithWeight: MemberWithUser[] = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
 
-  const members = await prisma.groupMember.findMany({
-    where: { groupId },
-    include: { user: { select: { id: true, name: true } } },
-  });
-
-  // Build countAs mapping
-  const countAsMap: Record<string, string> = {};
-  for (const m of members) {
-    if (m.countAsId) countAsMap[m.userId] = m.countAsId;
-  }
-
-  const monthlyTotals: Record<string, Record<string, { name: string; total: number }>> = {};
+  // Group expenses by month
+  const monthlyExpenses: Record<string, ExpenseWithItems[]> = {};
   for (const expense of expenses) {
     const d = new Date(expense.date);
     const key = `${d.getMonth() + 1}-${d.getFullYear()}`;
-    if (!monthlyTotals[key]) monthlyTotals[key] = {};
-    const effectiveUserId = countAsMap[expense.createdById] || expense.createdById;
-    if (!monthlyTotals[key][effectiveUserId]) {
-      const member = members.find((m) => m.userId === effectiveUserId);
-      monthlyTotals[key][effectiveUserId] = { name: member?.user.name || expense.createdBy.name, total: 0 };
-    }
-    monthlyTotals[key][effectiveUserId].total += expense.items.reduce((s, i) => s + Number(i.value), 0);
+    if (!monthlyExpenses[key]) monthlyExpenses[key] = [];
+    monthlyExpenses[key].push(expense);
   }
 
   const pending: { month: number; year: number; from: string; fromId: string; to: string; toId: string; amount: number }[] = [];
 
-  for (const [key, userTotals] of Object.entries(monthlyTotals)) {
+  for (const [key, monthExpenses] of Object.entries(monthlyExpenses)) {
     if (paidMap.get(key)) continue;
 
     const [monthStr, yearStr] = key.split("-");
-    const month = parseInt(monthStr);
-    const year = parseInt(yearStr);
+    const result = strategy.calculate(monthExpenses, membersWithWeight);
 
-    // Only include independent members
-    for (const m of members) {
-      if (!m.countAsId && !userTotals[m.userId]) userTotals[m.userId] = { name: m.user.name, total: 0 };
-    }
-
-    const users = Object.entries(userTotals).map(([id, data]) => ({ id, ...data }));
-    users.sort((a, b) => b.total - a.total);
-
-    if (users.length >= 2) {
-      const n = users.length;
-      const share = users.reduce((s, u) => s + u.total, 0) / n;
-      const debtor = users[users.length - 1];
-      const creditor = users[0];
-      const amount = Math.round((share - debtor.total) * 100) / 100;
-      if (amount > 0) {
-        pending.push({ month, year, from: debtor.name, fromId: debtor.id, to: creditor.name, toId: creditor.id, amount });
-      }
+    for (const s of result.settlements) {
+      pending.push({
+        month: parseInt(monthStr),
+        year: parseInt(yearStr),
+        from: s.from,
+        fromId: s.fromId,
+        to: s.to,
+        toId: s.toId,
+        amount: s.amount,
+      });
     }
   }
 
   pending.sort((a, b) => a.year - b.year || a.month - b.month);
 
+  // Net bidirectional flows across months
   const totalOwed: Record<string, { from: string; fromId: string; to: string; toId: string; amount: number }> = {};
   for (const p of pending) {
     const dirKey = `${p.fromId}->${p.toId}`;

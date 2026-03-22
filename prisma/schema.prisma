@@ -79,6 +79,8 @@ model Group {
   id         String   @id @default(cuid())
   name       String
   inviteCode String   @unique @map("invite_code")
+  splitType  String   @default("equal") @map("split_type")
+  groupType  String   @default("monthly") @map("group_type")
   createdAt  DateTime @default(now()) @map("created_at")
 
   members  GroupMember[]
@@ -96,6 +98,7 @@ model GroupMember {
   user       User     @relation(fields: [userId], references: [id])
   role       String   @default("member")
   countAsId  String?  @map("count_as_id")
+  weight     Int      @default(1)
   joinedAt   DateTime @default(now()) @map("joined_at")
 
   @@unique([groupId, userId])
