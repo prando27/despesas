@@ -18,10 +18,11 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sessions    Session[]
-  accounts    Account[]
-  expenses    Expense[]
-  memberships GroupMember[]
+  sessions             Session[]
+  accounts             Account[]
+  expenses             Expense[]
+  memberships          GroupMember[]
+  expenseParticipations ExpenseParticipant[]
 
   @@map("users")
 }
@@ -116,8 +117,9 @@ model Expense {
   createdBy   User          @relation(fields: [createdById], references: [id])
   groupId     String        @map("group_id")
   group       Group         @relation(fields: [groupId], references: [id])
-  createdAt   DateTime      @default(now()) @map("created_at")
-  items       ExpenseItem[]
+  createdAt    DateTime             @default(now()) @map("created_at")
+  items        ExpenseItem[]
+  participants ExpenseParticipant[]
 
   @@index([date])
   @@index([createdById])
@@ -134,6 +136,18 @@ model ExpenseItem {
 
   @@index([expenseId])
   @@map("expense_items")
+}
+
+model ExpenseParticipant {
+  id        String  @id @default(cuid())
+  expenseId String  @map("expense_id")
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+  @@index([expenseId])
+  @@map("expense_participants")
 }
 
 model MonthPayment {

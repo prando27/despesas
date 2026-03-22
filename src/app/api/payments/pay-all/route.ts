@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const [expenses, payments, members, group] = await Promise.all([
     prisma.expense.findMany({
       where: { groupId },
-      include: { items: true, createdBy: { select: { id: true, name: true } } },
+      include: { items: true, createdBy: { select: { id: true, name: true } }, participants: { select: { userId: true } } },
     }),
     prisma.monthPayment.findMany({ where: { groupId } }),
     prisma.groupMember.findMany({
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   ]);
 
   const paidMap = new Map(payments.map((p) => [`${p.month}-${p.year}`, p.isPaid]));
-  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted") ?? "equal");
+  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted" | "per-expense") ?? "equal");
   const membersWithWeight: MemberWithUser[] = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
 
   // Group expenses by month

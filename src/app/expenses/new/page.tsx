@@ -27,6 +27,7 @@ export default function NewExpensePage() {
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [lowConfidenceWarning, setLowConfidenceWarning] = useState<string | null>(null);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [error, setError] = useState("");
   const receiptRef = useRef<ReceiptUploadHandle>(null);
 
@@ -78,6 +79,7 @@ export default function NewExpensePage() {
           groupId: currentGroup.id,
           items: validItems,
           ...(receiptBase64 ? { receiptImage: receiptBase64, receiptMediaType } : {}),
+          ...(isPerExpense && selectedParticipants.length > 0 ? { participantIds: selectedParticipants } : {}),
         }),
         signal: controller.signal,
       });
@@ -102,6 +104,8 @@ export default function NewExpensePage() {
   }
 
   const total = items.reduce((s, i) => s + (Number(i.value) || 0), 0);
+  const isPerExpense = currentGroup?.splitType === "per-expense";
+  const independentMembers = currentGroup?.members.filter((m) => !m.countAsId) || [];
 
   const overlayState = extracting ? "loading" : extractError ? "error" : "hidden";
 
@@ -204,6 +208,36 @@ export default function NewExpensePage() {
               </div>
               <p className="text-sm text-right font-medium">Total: R$ {total.toFixed(2)}</p>
             </div>
+
+            {isPerExpense && independentMembers.length > 0 && (
+              <div className="space-y-2">
+                <Label>Quem participa desta despesa?</Label>
+                <div className="space-y-1">
+                  {independentMembers.map((m) => (
+                    <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedParticipants.includes(m.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedParticipants([...selectedParticipants, m.id]);
+                          } else {
+                            setSelectedParticipants(selectedParticipants.filter((id) => id !== m.id));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      {m.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedParticipants.length === 0
+                    ? "Nenhum selecionado = todos participam."
+                    : `${selectedParticipants.length} participante(s) selecionado(s).`}
+                </p>
+              </div>
+            )}
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 

@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest) {
 
   const updates: Promise<unknown>[] = [];
 
-  if (splitType && ["equal", "weighted"].includes(splitType)) {
+  if (splitType && ["equal", "weighted", "per-expense"].includes(splitType)) {
     updates.push(prisma.group.update({ where: { id: groupId }, data: { splitType } }));
   }
 

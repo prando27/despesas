@@ -11,6 +11,7 @@ export interface ExpenseWithItems {
   createdById: string;
   createdBy: { id: string; name: string };
   items: { value: number | { toNumber(): number } }[];
+  participants?: { userId: string }[];
 }
 
 export interface MemberWithUser {
@@ -50,4 +51,4 @@ export interface SplitStrategy {
   calculate(expenses: ExpenseWithItems[], members: MemberWithUser[]): SplitResult;
 }
 
-export type GroupSplitType = "equal" | "weighted";
+export type GroupSplitType = "equal" | "weighted" | "per-expense";

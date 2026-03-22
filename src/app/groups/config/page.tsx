@@ -146,11 +146,21 @@ export default function GroupConfigPage() {
               >
                 Por peso
               </Button>
+              <Button
+                variant={currentGroup.splitType === "per-expense" ? "default" : "outline"}
+                size="sm"
+                disabled={savingSplit}
+                onClick={() => handleSplitTypeChange("per-expense")}
+              >
+                Por despesa
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               {currentGroup.splitType === "equal"
                 ? "Total dividido igualmente entre todos os membros."
-                : "Total dividido proporcionalmente ao peso de cada membro."}
+                : currentGroup.splitType === "weighted"
+                ? "Total dividido proporcionalmente ao peso de cada membro."
+                : "Cada despesa é dividida apenas entre quem participou."}
             </p>
 
             {currentGroup.splitType === "weighted" && (

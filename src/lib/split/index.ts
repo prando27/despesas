@@ -1,6 +1,7 @@
 import type { GroupSplitType, SplitStrategy } from "./types";
 import { EqualSplitStrategy } from "./strategies/equal";
 import { WeightedSplitStrategy } from "./strategies/weighted";
+import { PerExpenseParticipantSplit } from "./strategies/per-expense";
 
 export type { SplitResult, SplitStrategy, ExpenseWithItems, MemberWithUser, Settlement, UserTotal, GroupSplitType } from "./types";
 
@@ -15,6 +16,8 @@ export function getSplitStrategy(type: GroupSplitType = "equal"): SplitStrategy 
       return new EqualSplitStrategy();
     case "weighted":
       return new WeightedSplitStrategy();
+    case "per-expense":
+      return new PerExpenseParticipantSplit();
     default:
       return new EqualSplitStrategy();
   }

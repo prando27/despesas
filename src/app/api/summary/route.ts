@@ -33,10 +33,10 @@ export async function GET(req: NextRequest) {
     where: isEvent
       ? { groupId }
       : { groupId, date: { gte: startDate, lt: endDate } },
-    include: { items: true, createdBy: { select: { id: true, name: true } } },
+    include: { items: true, createdBy: { select: { id: true, name: true } }, participants: { select: { userId: true } } },
   });
 
-  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted") ?? "equal");
+  const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted" | "per-expense") ?? "equal");
   const membersWithWeight = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
   const result = strategy.calculate(expenses, membersWithWeight);
 

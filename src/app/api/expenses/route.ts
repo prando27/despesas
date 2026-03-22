@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Optional participant IDs for per-expense splitting
+    const participantIds: string[] = body.participantIds || [];
+
     const expense = await prisma.expense.create({
       data: {
         description,
@@ -73,6 +76,11 @@ export async function POST(req: NextRequest) {
             value: item.value,
           })),
         },
+        ...(participantIds.length > 0 && {
+          participants: {
+            create: participantIds.map((userId) => ({ userId })),
+          },
+        }),
       },
       include: { items: true },
     });
