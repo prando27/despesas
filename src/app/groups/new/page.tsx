@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { useGroup } from "@/hooks/use-group";
 
 export default function NewGroupPage() {
   const router = useRouter();
+  const { refetch } = useGroup();
   const [name, setName] = useState("");
   const [groupType, setGroupType] = useState<"monthly" | "event">("monthly");
   const [inviteCode, setInviteCode] = useState("");
@@ -28,6 +30,7 @@ export default function NewGroupPage() {
     });
 
     if (res.ok) {
+      await refetch();
       router.push("/expenses");
     } else {
       const data = await res.json();
@@ -48,6 +51,7 @@ export default function NewGroupPage() {
     });
 
     if (res.ok) {
+      await refetch();
       router.push("/expenses");
     } else {
       const data = await res.json();
@@ -57,15 +61,13 @@ export default function NewGroupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-center text-xl">
-            {mode === "create" ? "Criar Grupo" : "Entrar no Grupo"}
-          </CardTitle>
-        </CardHeader>
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold">
+        {mode === "create" ? "Criar Grupo" : "Entrar no Grupo"}
+      </h1>
+      <Card>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button
               variant={mode === "create" ? "default" : "outline"}
               size="sm"
