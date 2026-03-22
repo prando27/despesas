@@ -107,8 +107,8 @@ function SummaryContent() {
 
   return (
     <div className="space-y-4">
-      {/* Pending total banner */}
-      {!loading && mySettlement && mySettlement.amount > 0 && (
+      {/* Pending total banner — only for monthly groups */}
+      {!loading && currentGroup?.groupType !== "event" && mySettlement && mySettlement.amount > 0 && (
         <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
@@ -148,10 +148,12 @@ function SummaryContent() {
         </div>
       )}
 
-      {/* Month navigation */}
-      <div>
-        <MonthPicker month={month} year={year} onChangeMonth={changeMonth} onSetMonthYear={setMonthYear} />
-      </div>
+      {/* Month navigation — hidden for event groups */}
+      {currentGroup?.groupType !== "event" && (
+        <div>
+          <MonthPicker month={month} year={year} onChangeMonth={changeMonth} onSetMonthYear={setMonthYear} />
+        </div>
+      )}
 
       {loading ? (
         <p className="text-center text-muted-foreground py-8">Carregando...</p>

@@ -17,9 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nome do grupo é obrigatório" }, { status: 400 });
   }
 
+  const groupType = body.groupType === "event" ? "event" : "monthly";
+
   const group = await prisma.group.create({
     data: {
       name,
+      groupType,
       inviteCode: generateInviteCode(),
       members: {
         create: { userId: session.user.id, role: "admin" },

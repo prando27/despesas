@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function NewGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [groupType, setGroupType] = useState<"monthly" | "event">("monthly");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function NewGroupPage() {
     const res = await fetch("/api/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, groupType }),
     });
 
     if (res.ok) {
@@ -94,6 +95,34 @@ export default function NewGroupPage() {
                   placeholder="Ex: Despesas da Mae"
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo do grupo</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={groupType === "monthly" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setGroupType("monthly")}
+                  >
+                    Mensal
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={groupType === "event" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setGroupType("event")}
+                  >
+                    Evento
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {groupType === "monthly"
+                    ? "Despesas recorrentes divididas por mês."
+                    : "Evento único (viagem, churrasco). Sem divisão mensal."}
+                </p>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>

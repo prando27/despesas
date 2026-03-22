@@ -19,17 +19,22 @@ export async function GET(req: NextRequest) {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
 
-  const [expenses, members, group] = await Promise.all([
-    prisma.expense.findMany({
-      where: { groupId, date: { gte: startDate, lt: endDate } },
-      include: { items: true, createdBy: { select: { id: true, name: true } } },
-    }),
+  const [members, group] = await Promise.all([
     prisma.groupMember.findMany({
       where: { groupId },
       include: { user: { select: { id: true, name: true } } },
     }),
-    prisma.group.findUnique({ where: { id: groupId }, select: { splitType: true } }),
+    prisma.group.findUnique({ where: { id: groupId }, select: { splitType: true, groupType: true } }),
   ]);
+
+  const isEvent = group?.groupType === "event";
+
+  const expenses = await prisma.expense.findMany({
+    where: isEvent
+      ? { groupId }
+      : { groupId, date: { gte: startDate, lt: endDate } },
+    include: { items: true, createdBy: { select: { id: true, name: true } } },
+  });
 
   const strategy = getSplitStrategy((group?.splitType as "equal" | "weighted") ?? "equal");
   const membersWithWeight = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
