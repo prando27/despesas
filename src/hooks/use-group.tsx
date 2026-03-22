@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext, createContext, type ReactNode } from "react";
 
 interface GroupMember {
   memberId: string;
@@ -22,9 +22,19 @@ export interface Group {
   members: GroupMember[];
 }
 
+interface GroupContextValue {
+  groups: Group[];
+  currentGroup: Group | null;
+  setCurrentGroup: (group: Group | null) => void;
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
+
+const GroupContext = createContext<GroupContextValue | null>(null);
+
 const STORAGE_KEY = "currentGroupId";
 
-export function useGroup() {
+export function GroupProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [currentGroup, setCurrentGroupState] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +56,6 @@ export function useGroup() {
       const fetchedGroups: Group[] = data.groups || [];
       setGroups(fetchedGroups);
 
-      // Restore saved selection or fall back to first group
       const savedId = localStorage.getItem(STORAGE_KEY);
       const saved = savedId ? fetchedGroups.find((g) => g.id === savedId) : null;
       setCurrentGroupState(saved || fetchedGroups[0] || null);
@@ -59,5 +68,17 @@ export function useGroup() {
     fetchGroups();
   }, [fetchGroups]);
 
-  return { groups, currentGroup, setCurrentGroup, loading, refetch: fetchGroups };
+  return (
+    <GroupContext.Provider value={{ groups, currentGroup, setCurrentGroup, loading, refetch: fetchGroups }}>
+      {children}
+    </GroupContext.Provider>
+  );
+}
+
+export function useGroup() {
+  const context = useContext(GroupContext);
+  if (!context) {
+    throw new Error("useGroup must be used within a GroupProvider");
+  }
+  return context;
 }
