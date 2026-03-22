@@ -163,7 +163,7 @@ function SummaryContent() {
           year={summary.year}
           grandTotal={summary.grandTotal}
           perUser={summary.perUser}
-          settlement={summary.settlement}
+          settlements={summary.settlements || []}
           isPaid={summary.isPaid}
           paidBy={summary.paidBy}
           paidAt={summary.paidAt}

@@ -38,6 +38,7 @@ export interface SummaryData {
   grandTotal: number;
   perUser: UserTotal[];
   settlement: Settlement | null;
+  settlements: Settlement[];
   isPaid: boolean;
   paidAt: string | null;
   paidBy: string | null;

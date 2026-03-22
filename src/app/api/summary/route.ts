@@ -40,9 +40,6 @@ export async function GET(req: NextRequest) {
   const membersWithWeight = members.map((m) => ({ ...m, weight: m.weight ?? 1 }));
   const result = strategy.calculate(expenses, membersWithWeight);
 
-  // Legacy compatibility: return first settlement as singular object
-  const settlement = result.settlements.length > 0 ? result.settlements[0] : null;
-
   const payment = await prisma.monthPayment.findUnique({
     where: { month_year_groupId: { month, year, groupId } },
   });
@@ -52,7 +49,8 @@ export async function GET(req: NextRequest) {
     year,
     grandTotal: result.grandTotal,
     perUser: result.perUser,
-    settlement,
+    settlement: result.settlements[0] || null,
+    settlements: result.settlements,
     isPaid: payment?.isPaid || false,
     paidAt: payment?.paidAt,
     paidBy: payment?.paidBy,

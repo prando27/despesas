@@ -8,7 +8,7 @@ interface MonthSummaryProps {
   year: number;
   grandTotal: number;
   perUser: UserTotal[];
-  settlement: Settlement | null;
+  settlements: Settlement[];
   isPaid: boolean;
   paidBy?: string | null;
   paidAt?: string | null;
@@ -22,10 +22,10 @@ function formatBRL(value: number) {
 }
 
 export function MonthSummary({
-  grandTotal, perUser, settlement, isPaid, paidBy, paidAt, currentUserId, onMarkPaid, loading,
+  grandTotal, perUser, settlements, isPaid, paidBy, paidAt, currentUserId, onMarkPaid, loading,
 }: MonthSummaryProps) {
   const sorted = [...perUser].sort((a, b) => b.total - a.total);
-  const hasSettlement = settlement && settlement.amount > 0;
+  const hasSettlements = settlements.length > 0;
 
   return (
     <div className="space-y-4">
@@ -54,7 +54,6 @@ export function MonthSummary({
                   {isPositive ? `+${formatBRL(diff)} acima` : diff < 0 ? `${formatBRL(Math.abs(diff))} abaixo` : "Exato"}
                 </p>
               )}
-              {/* Visual bar showing proportion */}
               {grandTotal > 0 && (
                 <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                   <div
@@ -68,29 +67,29 @@ export function MonthSummary({
         })}
       </div>
 
-      {/* Settlement card */}
-      {hasSettlement && (
-        <div className={`rounded-xl border-2 p-5 ${isPaid ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-          <div className="flex items-center gap-2 mb-3">
+      {/* Settlement cards */}
+      {hasSettlements && (
+        <div className={`rounded-xl border-2 p-5 space-y-4 ${isPaid ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+          <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isPaid ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
             <p className={`text-xs font-semibold uppercase tracking-widest ${isPaid ? "text-emerald-700" : "text-amber-700"}`}>
-              {isPaid ? "Acerto realizado" : "Acerto pendente"}
+              {isPaid ? "Acerto realizado" : settlements.length === 1 ? "Acerto pendente" : `${settlements.length} acertos pendentes`}
             </p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          {settlements.map((s, i) => (
+            <div key={i} className="flex items-center gap-3">
               {/* From */}
-              <div className="text-center">
+              <div className="text-center shrink-0">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-current flex items-center justify-center text-sm font-bold text-amber-600">
-                  {settlement!.from.charAt(0)}
+                  {s.from.charAt(0)}
                 </div>
-                <p className="text-xs mt-1 font-medium">{settlement!.from}</p>
+                <p className="text-xs mt-1 font-medium">{s.from}</p>
               </div>
 
               {/* Arrow + amount */}
-              <div className="flex flex-col items-center">
-                <p className="text-lg font-bold tabular-nums">{formatBRL(settlement!.amount)}</p>
+              <div className="flex flex-col items-center flex-1">
+                <p className="text-lg font-bold tabular-nums">{formatBRL(s.amount)}</p>
                 <svg width="60" height="12" viewBox="0 0 60 12" className="text-current opacity-40">
                   <line x1="0" y1="6" x2="52" y2="6" stroke="currentColor" strokeWidth="2" />
                   <polygon points="52,1 60,6 52,11" fill="currentColor" />
@@ -98,35 +97,30 @@ export function MonthSummary({
               </div>
 
               {/* To */}
-              <div className="text-center">
+              <div className="text-center shrink-0">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-current flex items-center justify-center text-sm font-bold text-emerald-600">
-                  {settlement!.to.charAt(0)}
+                  {s.to.charAt(0)}
                 </div>
-                <p className="text-xs mt-1 font-medium">{settlement!.to}</p>
+                <p className="text-xs mt-1 font-medium">{s.to}</p>
               </div>
             </div>
-          </div>
-
-          {/* Explanation */}
-          <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-            {settlement!.from} deve {formatBRL(settlement!.amount)} para {settlement!.to}.
-          </p>
+          ))}
 
           {/* Pay button or paid status */}
           {isPaid ? (
-            <p className="text-xs text-emerald-700 mt-3 font-medium">
+            <p className="text-xs text-emerald-700 font-medium">
               Pago por {paidBy} em {paidAt ? new Date(paidAt).toLocaleDateString("pt-BR") : ""}
             </p>
-          ) : currentUserId === settlement!.fromId ? (
-            <Button size="sm" className="mt-3 w-full" onClick={onMarkPaid} disabled={loading}>
-              {loading ? "Salvando..." : `Ja paguei ${formatBRL(settlement!.amount)}`}
+          ) : settlements.some((s) => s.fromId === currentUserId) ? (
+            <Button size="sm" className="w-full" onClick={onMarkPaid} disabled={loading}>
+              {loading ? "Salvando..." : "Ja paguei"}
             </Button>
           ) : null}
         </div>
       )}
 
       {/* No settlement needed */}
-      {(!hasSettlement && grandTotal > 0) && (
+      {(!hasSettlements && grandTotal > 0) && (
         <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-5 text-center">
           <p className="text-sm font-medium text-emerald-700">Tudo certo este mes!</p>
           <p className="text-xs text-emerald-600 mt-1">Ninguem deve nada.</p>
