@@ -5,9 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Expense } from "@/lib/types";
 
+interface GroupMember {
+  id: string;
+  countAsId: string | null;
+}
+
 interface ExpenseListProps {
   expenses: Expense[];
   currentUserId?: string;
+  members?: GroupMember[];
   onDelete?: (id: string) => void;
 }
 
@@ -76,7 +82,17 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
   );
 }
 
-export function ExpenseList({ expenses, currentUserId, onDelete }: ExpenseListProps) {
+export function ExpenseList({ expenses, currentUserId, members, onDelete }: ExpenseListProps) {
+  // Build set of user IDs whose expenses the current user can delete
+  // (own expenses + expenses from members linked to current user via countAsId)
+  const canDeleteIds: string[] = currentUserId ? [currentUserId] : [];
+  if (currentUserId && members) {
+    for (const m of members) {
+      if (m.countAsId === currentUserId && !canDeleteIds.includes(m.id)) {
+        canDeleteIds.push(m.id);
+      }
+    }
+  }
   if (expenses.length === 0) {
     return <p className="text-muted-foreground text-center py-8">Nenhuma despesa neste mes.</p>;
   }
@@ -100,7 +116,7 @@ export function ExpenseList({ expenses, currentUserId, onDelete }: ExpenseListPr
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">R$ {total.toFixed(2)}</p>
-                  {onDelete && expense.createdBy.id === currentUserId && (
+                  {onDelete && canDeleteIds.includes(expense.createdBy.id) && (
                     <Button
                       variant="ghost"
                       size="sm"

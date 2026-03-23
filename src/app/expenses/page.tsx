@@ -56,7 +56,7 @@ function ExpensesContent() {
       {loading ? (
         <p className="text-center text-muted-foreground py-8">Carregando...</p>
       ) : (
-        <ExpenseList expenses={expenses} currentUserId={session?.user?.id} onDelete={handleDelete} />
+        <ExpenseList expenses={expenses} currentUserId={session?.user?.id} members={currentGroup?.members} onDelete={handleDelete} />
       )}
     </div>
   );
