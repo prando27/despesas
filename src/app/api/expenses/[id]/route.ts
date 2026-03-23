@@ -9,9 +9,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { id } = await params;
 
-  const expense = await prisma.expense.findUnique({ where: { id }, select: { createdById: true } });
+  const expense = await prisma.expense.findUnique({ where: { id }, select: { createdById: true, groupId: true } });
   if (!expense) return NextResponse.json({ error: "Despesa não encontrada" }, { status: 404 });
-  if (expense.createdById !== session.user.id) {
+
+  // Allow delete if user is the creator OR if the creator is linked to the user via countAsId
+  let canDelete = expense.createdById === session.user.id;
+  if (!canDelete) {
+    const creatorMember = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId: expense.groupId, userId: expense.createdById } },
+      select: { countAsId: true },
+    });
+    canDelete = creatorMember?.countAsId === session.user.id;
+  }
+  if (!canDelete) {
     return NextResponse.json({ error: "Sem permissão para excluir esta despesa" }, { status: 403 });
   }
 
