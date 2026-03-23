@@ -124,10 +124,18 @@ export function MonthSummary({
       )}
 
       {/* No settlement needed */}
-      {(!hasSettlement && grandTotal > 0) && (
+      {(!hasSettlement && grandTotal > 0 && sorted.length >= 2) && (
         <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-5 text-center">
           <p className="text-sm font-medium text-emerald-700">Tudo certo este mes!</p>
           <p className="text-xs text-emerald-600 mt-1">Ninguem deve nada.</p>
+        </div>
+      )}
+
+      {/* Only one independent member — needs more people to split */}
+      {(!hasSettlement && grandTotal > 0 && sorted.length < 2) && (
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-5 text-center">
+          <p className="text-sm font-medium text-amber-700">Adicione mais membros para dividir</p>
+          <p className="text-xs text-amber-600 mt-1">Convide alguém pelo código do grupo para calcular a divisão.</p>
         </div>
       )}
 
