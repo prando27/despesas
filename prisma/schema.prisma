@@ -18,10 +18,12 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sessions    Session[]
-  accounts    Account[]
-  expenses    Expense[]
-  memberships GroupMember[]
+  sessions           Session[]
+  accounts           Account[]
+  expenses           Expense[]
+  entriesCreated     Entry[]   @relation("EntryCreatedBy")
+  transfersReceived  Entry[]   @relation("EntryTransferTo")
+  memberships        GroupMember[]
 
   @@map("users")
 }
@@ -83,6 +85,7 @@ model Group {
 
   members  GroupMember[]
   expenses Expense[]
+  entries  Entry[]
   payments MonthPayment[]
 
   @@map("groups")
@@ -131,6 +134,38 @@ model ExpenseItem {
 
   @@index([expenseId])
   @@map("expense_items")
+}
+
+model Entry {
+  id          String      @id @default(cuid())
+  type        String      @default("EXPENSE")
+  description String
+  date        DateTime
+  receiptUrl  String?     @map("receipt_url")
+  createdById String      @map("created_by_id")
+  createdBy   User        @relation("EntryCreatedBy", fields: [createdById], references: [id])
+  toUserId    String?     @map("to_user_id")
+  toUser      User?       @relation("EntryTransferTo", fields: [toUserId], references: [id])
+  groupId     String      @map("group_id")
+  group       Group       @relation(fields: [groupId], references: [id])
+  createdAt   DateTime    @default(now()) @map("created_at")
+  items       EntryItem[]
+
+  @@index([date])
+  @@index([createdById])
+  @@index([groupId])
+  @@map("entries")
+}
+
+model EntryItem {
+  id          String  @id @default(cuid())
+  description String
+  value       Decimal @db.Decimal(10, 2)
+  entryId     String  @map("entry_id")
+  entry       Entry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@map("entry_items")
 }
 
 model MonthPayment {
