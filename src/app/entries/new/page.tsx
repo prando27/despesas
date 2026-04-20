@@ -69,10 +69,11 @@ export default function NewExpensePage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const res = await fetch("/api/expenses", {
+      const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          type: "EXPENSE",
           description,
           date,
           groupId: currentGroup.id,
@@ -85,7 +86,7 @@ export default function NewExpensePage() {
       clearTimeout(timeout);
 
       if (res.ok) {
-        router.push("/expenses");
+        router.push("/entries");
         return;
       }
 

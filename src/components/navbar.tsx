@@ -40,7 +40,7 @@ function IconSettings({ className }: { className?: string }) {
 }
 
 const tabs = [
-  { href: "/expenses", label: "Despesas", icon: IconList },
+  { href: "/entries", label: "Lançamentos", icon: IconList },
   { href: "/summary", label: "Resumo", icon: IconChart },
   { href: "/groups/config", label: "Grupo", icon: IconSettings },
 ];
@@ -82,9 +82,9 @@ export function Navbar() {
       </nav>
 
       {/* FAB — New expense (mobile only, hidden on /expenses/new) */}
-      {pathname !== "/expenses/new" && (
+      {pathname !== "/entries/new" && (
         <Link
-          href="/expenses/new"
+          href="/entries/new"
           className="md:hidden fixed right-5 bottom-20 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg bg-primary/90 text-primary-foreground hover:bg-primary transition-colors"
           style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         >
@@ -97,18 +97,18 @@ export function Navbar() {
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-around px-2">
           {/* Nova — desktop only, first item */}
           <Link
-            href="/expenses/new"
+            href="/entries/new"
             className={`hidden md:flex flex-col items-center gap-1 py-2 px-3 ${
-              pathname === "/expenses/new" ? "text-primary" : "text-muted-foreground"
+              pathname === "/entries/new" ? "text-primary" : "text-muted-foreground"
             }`}
           >
             <IconPlus className="w-[22px] h-[22px]" />
             <span className="text-[10px] font-medium">Nova</span>
           </Link>
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href || (tab.href === "/expenses" && pathname === "/expenses/new");
+            const isActive = pathname === tab.href || (tab.href === "/entries" && pathname.startsWith("/entries/"));
             const Icon = tab.icon;
-            const href = (tab.href === "/expenses" || tab.href === "/summary") ? hrefWithParams(tab.href) : tab.href;
+            const href = (tab.href === "/entries" || tab.href === "/summary") ? hrefWithParams(tab.href) : tab.href;
 
             return (
               <Link

@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Expense } from "@/lib/types";
+import type { Entry } from "@/lib/types";
 
 interface GroupMember {
   id: string;
   countAsId: string | null;
 }
 
-interface ExpenseListProps {
-  expenses: Expense[];
+interface EntryListProps {
+  entries: Entry[];
   currentUserId?: string;
   members?: GroupMember[];
   onDelete?: (id: string) => void;
@@ -43,6 +43,7 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
       </Button>
       {open && (
         <div className="mt-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt="Cupom"
@@ -66,6 +67,7 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
             className={`w-full h-full ${zoomed ? "overflow-auto" : "flex items-center justify-center"}`}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={url}
               alt="Cupom"
@@ -82,9 +84,12 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
   );
 }
 
-export function ExpenseList({ expenses, currentUserId, members, onDelete }: ExpenseListProps) {
-  // Build set of user IDs whose expenses the current user can delete
-  // (own expenses + expenses from members linked to current user via countAsId)
+function formatDate(isoDate: string) {
+  const d = isoDate.slice(0, 10).split("-");
+  return `${d[2]}/${d[1]}/${d[0]}`;
+}
+
+export function EntryList({ entries, currentUserId, members, onDelete }: EntryListProps) {
   const canDeleteIds: string[] = currentUserId ? [currentUserId] : [];
   if (currentUserId && members) {
     for (const m of members) {
@@ -93,35 +98,77 @@ export function ExpenseList({ expenses, currentUserId, members, onDelete }: Expe
       }
     }
   }
-  if (expenses.length === 0) {
-    return <p className="text-muted-foreground text-center py-8">Nenhuma despesa neste mes.</p>;
+
+  if (entries.length === 0) {
+    return <p className="text-muted-foreground text-center py-8">Nenhum lançamento neste mes.</p>;
   }
 
   return (
     <div className="space-y-3">
-      {expenses.map((expense) => {
-        const total = expense.items.reduce((s, i) => s + Number(i.value), 0);
+      {entries.map((entry) => {
+        const total = entry.items.reduce((s, i) => s + Number(i.value), 0);
+        const isTransfer = entry.type === "TRANSFER";
+
+        if (isTransfer) {
+          return (
+            <Card key={entry.id} className="border-l-4 border-l-blue-400">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-1 text-xs text-blue-600 font-medium shrink-0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                      Pagamento
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {entry.createdBy.name} → {entry.toUser?.name || "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(entry.date)}
+                        {entry.description && entry.description !== "Pagamento" ? ` — ${entry.description}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold tabular-nums">R$ {total.toFixed(2)}</p>
+                    {onDelete && canDeleteIds.includes(entry.createdBy.id) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 h-7 text-xs"
+                        onClick={() => onDelete(entry.id)}
+                      >
+                        Excluir
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        }
+
         return (
-          <Card key={expense.id}>
+          <Card key={entry.id}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">{expense.description}</CardTitle>
+                  <CardTitle className="text-base">{entry.description}</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {(() => {
-                      const d = expense.date.slice(0, 10).split("-");
-                      return `${d[2]}/${d[1]}/${d[0]}`;
-                    })()} — por {expense.createdBy.name}
+                    {formatDate(entry.date)} — por {entry.createdBy.name}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">R$ {total.toFixed(2)}</p>
-                  {onDelete && canDeleteIds.includes(expense.createdBy.id) && (
+                  {onDelete && canDeleteIds.includes(entry.createdBy.id) && (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="text-red-500 h-7 text-xs"
-                      onClick={() => onDelete(expense.id)}
+                      onClick={() => onDelete(entry.id)}
                     >
                       Excluir
                     </Button>
@@ -131,16 +178,16 @@ export function ExpenseList({ expenses, currentUserId, members, onDelete }: Expe
             </CardHeader>
             <CardContent>
               <ul className="text-sm space-y-1">
-                {expense.items.map((item) => (
+                {entry.items.map((item) => (
                   <li key={item.id} className="flex justify-between">
                     <span>{item.description}</span>
                     <span className="text-muted-foreground">R$ {Number(item.value).toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
-              {expense.receiptUrl && (
+              {entry.receiptUrl && (
                 <div className="mt-2 pt-2 border-t">
-                  <ReceiptViewer receiptKey={expense.receiptUrl} />
+                  <ReceiptViewer receiptKey={entry.receiptUrl} />
                 </div>
               )}
             </CardContent>
