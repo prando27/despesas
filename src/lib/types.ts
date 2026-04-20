@@ -38,7 +38,7 @@ export interface Entry {
 
 export interface Settlement {
   from: string;
-  fromId: string | null;
+  fromId: string;
   to: string;
   toId: string;
   amount: number;
@@ -55,10 +55,7 @@ export interface SummaryData {
   year: number;
   grandTotal: number;
   perUser: UserTotal[];
-  settlement: Settlement | null;
-  isPaid: boolean;
-  paidAt: string | null;
-  paidBy: string | null;
+  settlements: Settlement[];
 }
 
 // --- Validation Schemas ---

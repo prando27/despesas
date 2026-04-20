@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
 
-export default function ExpensesLayout({ children }: { children: React.ReactNode }) {
+export default function EntriesLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Suspense>

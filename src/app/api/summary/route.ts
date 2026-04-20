@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import type { Settlement } from "@/lib/types";
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 export async function GET(req: NextRequest) {
   const session = await getSession(req.headers);
@@ -18,98 +23,93 @@ export async function GET(req: NextRequest) {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
 
-  const expenses = await prisma.expense.findMany({
+  const entries = await prisma.entry.findMany({
     where: { groupId, date: { gte: startDate, lt: endDate } },
-    include: { items: true, createdBy: { select: { id: true, name: true } } },
+    include: { items: true },
   });
 
-  // Load members with countAsId mapping
   const members = await prisma.groupMember.findMany({
     where: { groupId },
     include: { user: { select: { id: true, name: true } } },
   });
 
-  // Build countAs mapping: userId -> countAsId (if set)
   const countAsMap: Record<string, string> = {};
   for (const m of members) {
-    if (m.countAsId) {
-      countAsMap[m.userId] = m.countAsId;
-    }
+    if (m.countAsId) countAsMap[m.userId] = m.countAsId;
   }
 
-  const totalsPerUser: Record<string, { name: string; total: number }> = {};
+  const independents = members.filter((m) => !m.countAsId);
+  const nameById: Record<string, string> = {};
+  for (const m of independents) nameById[m.userId] = m.user.name;
+
+  // Net contribution per independent user:
+  //   sum(EXPENSE created by user) + sum(TRANSFER sent) - sum(TRANSFER received)
+  const net: Record<string, number> = {};
+  for (const m of independents) net[m.userId] = 0;
+
   let grandTotal = 0;
 
-  for (const expense of expenses) {
-    // If creator has countAsId, attribute expense to that user
-    const effectiveUserId = countAsMap[expense.createdById] || expense.createdById;
-    if (!totalsPerUser[effectiveUserId]) {
-      const member = members.find((m) => m.userId === effectiveUserId);
-      totalsPerUser[effectiveUserId] = { name: member?.user.name || expense.createdBy.name, total: 0 };
-    }
-    const expenseTotal = expense.items.reduce((sum, item) => sum + Number(item.value), 0);
-    totalsPerUser[effectiveUserId].total += expenseTotal;
-    grandTotal += expenseTotal;
-  }
+  for (const entry of entries) {
+    const entryTotal = entry.items.reduce((sum, item) => sum + Number(item.value), 0);
+    const creatorEffective = countAsMap[entry.createdById] || entry.createdById;
 
-  // Ensure all independent members appear (exclude those with countAsId)
-  for (const m of members) {
-    if (!m.countAsId && !totalsPerUser[m.userId]) {
-      totalsPerUser[m.userId] = { name: m.user.name, total: 0 };
+    if (entry.type === "TRANSFER") {
+      if (creatorEffective in net) net[creatorEffective] += entryTotal;
+      if (entry.toUserId) {
+        const receiverEffective = countAsMap[entry.toUserId] || entry.toUserId;
+        if (receiverEffective in net) net[receiverEffective] -= entryTotal;
+      }
+    } else {
+      if (creatorEffective in net) net[creatorEffective] += entryTotal;
+      grandTotal += entryTotal;
     }
   }
 
-  const users = Object.entries(totalsPerUser).map(([id, data]) => ({ id, ...data }));
-  users.sort((a, b) => b.total - a.total);
+  const n = independents.length;
+  const share = n > 0 ? grandTotal / n : 0;
 
-  // Settlement: N-person split — total / N, whoever paid less owes the difference
-  const n = users.length;
-  let settlement = null;
+  const perUser = independents
+    .map((m) => ({ id: m.userId, name: m.user.name, total: round2(net[m.userId] ?? 0) }))
+    .sort((a, b) => b.total - a.total);
+
+  // Greedy settlement: pair largest creditor with largest debtor until balances zero
+  const settlements: Settlement[] = [];
   if (n >= 2) {
-    const share = grandTotal / n;
-    // Find who owes the most (spent the least below share)
-    const debtors = users.filter((u) => u.total < share).map((u) => ({
-      ...u,
-      owes: Math.round((share - u.total) * 100) / 100,
-    }));
-    const creditors = users.filter((u) => u.total > share).map((u) => ({
-      ...u,
-      owed: Math.round((u.total - share) * 100) / 100,
-    }));
+    const creditors = independents
+      .map((m) => ({ id: m.userId, balance: (net[m.userId] ?? 0) - share }))
+      .filter((u) => u.balance > 0.005)
+      .sort((a, b) => b.balance - a.balance);
+    const debtors = independents
+      .map((m) => ({ id: m.userId, balance: share - (net[m.userId] ?? 0) }))
+      .filter((u) => u.balance > 0.005)
+      .sort((a, b) => b.balance - a.balance);
 
-    // For 2 people, simplify to single settlement
-    if (debtors.length === 1 && creditors.length === 1) {
-      settlement = {
-        from: debtors[0].name,
-        fromId: debtors[0].id,
-        to: creditors[0].name,
-        toId: creditors[0].id,
-        amount: debtors[0].owes,
-      };
-    } else if (debtors.length > 0 && creditors.length > 0) {
-      // For N people, pick largest debtor → largest creditor (simplified)
-      settlement = {
-        from: debtors[0].name,
-        fromId: debtors[0].id,
-        to: creditors[0].name,
-        toId: creditors[0].id,
-        amount: debtors[0].owes,
-      };
+    let i = 0;
+    let j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const amount = Math.min(debtors[i].balance, creditors[j].balance);
+      const rounded = round2(amount);
+      if (rounded > 0) {
+        settlements.push({
+          from: nameById[debtors[i].id] || "",
+          fromId: debtors[i].id,
+          to: nameById[creditors[j].id] || "",
+          toId: creditors[j].id,
+          amount: rounded,
+        });
+      }
+      debtors[i].balance -= amount;
+      creditors[j].balance -= amount;
+      if (debtors[i].balance < 0.005) i++;
+      if (creditors[j].balance < 0.005) j++;
     }
   }
-
-  const payment = await prisma.monthPayment.findUnique({
-    where: { month_year_groupId: { month, year, groupId } },
-  });
 
   return NextResponse.json({
     month,
     year,
-    grandTotal: Math.round(grandTotal * 100) / 100,
-    perUser: users,
-    settlement,
-    isPaid: payment?.isPaid || false,
-    paidAt: payment?.paidAt,
-    paidBy: payment?.paidBy,
+    grandTotal: round2(grandTotal),
+    perUser,
+    settlements,
   });
 }
