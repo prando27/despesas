@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EntryList } from "@/components/entry-list";
 import { MonthPicker } from "@/components/month-picker";
@@ -51,21 +50,6 @@ function EntriesContent() {
       <div className="flex items-center justify-between">
         <MonthPicker month={month} year={year} onChangeMonth={changeMonth} onSetMonthYear={setMonthYear} />
         <p className="text-sm text-muted-foreground">Total: R$ {expenseTotal.toFixed(2)}</p>
-      </div>
-
-      <div className="flex gap-2">
-        <Link
-          href="/entries/new"
-          className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          Adicionar despesa
-        </Link>
-        <Link
-          href="/entries/transfer"
-          className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
-        >
-          Registrar pagamento
-        </Link>
       </div>
 
       {loading ? (
