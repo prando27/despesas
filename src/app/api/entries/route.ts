@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { type, description, date, items, groupId, toUserId } = parsed.data;
+  const { type, description, date, items, groupId, toUserId, discount } = parsed.data;
 
   const membership = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId, userId: session.user.id } },
@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
         createdById: session.user.id,
         toUserId: type === "TRANSFER" ? toUserId : null,
         groupId,
+        discount: type === "EXPENSE" ? discount : 0,
         items: {
           create: items.map((item) => ({
             description: item.description,

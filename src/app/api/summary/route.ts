@@ -50,7 +50,8 @@ export async function GET(req: NextRequest) {
   let grandTotal = 0;
 
   for (const entry of entries) {
-    const entryTotal = entry.items.reduce((sum, item) => sum + Number(item.value), 0);
+    const itemsTotal = entry.items.reduce((sum, item) => sum + Number(item.value), 0);
+    const entryTotal = itemsTotal - Number(entry.discount);
     const creatorEffective = countAsMap[entry.createdById] || entry.createdById;
 
     if (entry.type === "TRANSFER") {

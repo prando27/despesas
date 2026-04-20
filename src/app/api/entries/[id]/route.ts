@@ -46,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { description, date, items } = parsed.data;
+  const { description, date, items, discount } = parsed.data;
 
   const updated = await prisma.$transaction(async (tx) => {
     if (items) {
@@ -58,6 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...(description && { description }),
         ...(date && { date: new Date(date) }),
+        ...(discount !== undefined && { discount }),
         ...(items && {
           items: {
             create: items.map((item) => ({

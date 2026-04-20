@@ -21,6 +21,8 @@ export default function NewExpensePage() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<Item[]>([{ description: "", value: 0 }]);
+  const [discount, setDiscount] = useState(0);
+  const [discountOpen, setDiscountOpen] = useState(false);
   const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
   const [receiptMediaType, setReceiptMediaType] = useState<string>("image/jpeg");
   const [saving, setSaving] = useState(false);
@@ -33,6 +35,11 @@ export default function NewExpensePage() {
   function handleItemsExtracted(extracted: Item[]) {
     setItems(extracted);
     setLowConfidenceWarning(null);
+  }
+
+  function handleDiscountExtracted(value: number) {
+    setDiscount(value);
+    setDiscountOpen(true);
   }
 
   function updateItem(index: number, field: keyof Item, value: string | number) {
@@ -64,6 +71,13 @@ export default function NewExpensePage() {
       return;
     }
 
+    const itemsTotal = validItems.reduce((s, i) => s + i.value, 0);
+    const safeDiscount = Math.max(0, discount || 0);
+    if (safeDiscount > itemsTotal + 0.001) {
+      setError("O desconto não pode ser maior que a soma dos itens.");
+      return;
+    }
+
     setSaving(true);
     try {
       const controller = new AbortController();
@@ -78,6 +92,7 @@ export default function NewExpensePage() {
           date,
           groupId: currentGroup.id,
           items: validItems,
+          discount: safeDiscount,
           ...(receiptBase64 ? { receiptImage: receiptBase64, receiptMediaType } : {}),
         }),
         signal: controller.signal,
@@ -102,7 +117,10 @@ export default function NewExpensePage() {
     setSaving(false);
   }
 
-  const total = items.reduce((s, i) => s + (Number(i.value) || 0), 0);
+  const subtotal = items.reduce((s, i) => s + (Number(i.value) || 0), 0);
+  const safeDiscount = Math.max(0, Math.min(discount || 0, subtotal));
+  const total = subtotal - safeDiscount;
+  const hasDiscount = discountOpen || safeDiscount > 0;
 
   const overlayState = extracting ? "loading" : extractError ? "error" : "hidden";
 
@@ -129,6 +147,7 @@ export default function NewExpensePage() {
             onItemsExtracted={handleItemsExtracted}
             onDateExtracted={(d) => setDate(d)}
             onDescriptionExtracted={(d) => setDescription(d)}
+            onDiscountExtracted={handleDiscountExtracted}
             onImageReady={(base64, mediaType) => {
               setReceiptBase64(base64);
               setReceiptMediaType(mediaType);
@@ -203,7 +222,67 @@ export default function NewExpensePage() {
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-right font-medium">Total: R$ {total.toFixed(2)}</p>
+            </div>
+
+            {hasDiscount ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="discount">Desconto</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground"
+                    onClick={() => { setDiscount(0); setDiscountOpen(false); }}
+                  >
+                    Remover
+                  </Button>
+                </div>
+                <Input
+                  id="discount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={discount || ""}
+                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-blue-600 px-0"
+                onClick={() => setDiscountOpen(true)}
+              >
+                + Adicionar desconto
+              </Button>
+            )}
+
+            <div className="rounded-lg bg-gray-50 border p-3 space-y-1 text-sm">
+              {safeDiscount > 0 ? (
+                <>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums">R$ {subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-700">
+                    <span>Desconto</span>
+                    <span className="tabular-nums">− R$ {safeDiscount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-1 border-t">
+                    <span>Total</span>
+                    <span className="tabular-nums">R$ {total.toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="tabular-nums">R$ {total.toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
