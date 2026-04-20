@@ -12,6 +12,7 @@ interface ReceiptUploadProps {
   onItemsExtracted: (items: ReceiptItem[]) => void;
   onDateExtracted: (date: string) => void;
   onDescriptionExtracted: (description: string) => void;
+  onDiscountExtracted?: (discount: number) => void;
   onImageReady: (base64: string, mediaType: string) => void;
   onLoadingChange?: (loading: boolean) => void;
   onError?: (error: string | null) => void;
@@ -59,7 +60,7 @@ function compressImage(file: File): Promise<{ base64: string; mediaType: string;
   });
 }
 
-export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>(function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onImageReady, onLoadingChange, onError, onLowConfidence }, ref) {
+export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>(function ReceiptUpload({ onItemsExtracted, onDateExtracted, onDescriptionExtracted, onDiscountExtracted, onImageReady, onLoadingChange, onError, onLowConfidence }, ref) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +116,9 @@ export const ReceiptUpload = forwardRef<ReceiptUploadHandle, ReceiptUploadProps>
       }
       if (data.description) {
         onDescriptionExtracted(data.description);
+      }
+      if (typeof data.discount === "number" && data.discount > 0) {
+        onDiscountExtracted?.(data.discount);
       }
     } catch {
       const msg = "Erro ao extrair itens do cupom. Verifique a imagem e tente novamente.";

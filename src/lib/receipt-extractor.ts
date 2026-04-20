@@ -11,6 +11,7 @@ export interface ReceiptData {
   items: ReceiptItem[];
   date: string | null;
   description: string | null;
+  discount: number | null;
   confidence: ReceiptConfidence;
   rejectionReason: string | null;
 }
@@ -20,9 +21,14 @@ export interface ReceiptExtractor {
 }
 
 const PROMPT = `Analise esta imagem de cupom fiscal brasileiro. Extraia:
-1. Todos os itens comprados com descrição e valor em reais (número decimal, ex: 12.50)
+1. Todos os itens comprados com descrição e valor BRUTO em reais (antes do desconto, número decimal, ex: 12.50)
 2. A data da compra no formato YYYY-MM-DD
 3. Uma descrição curta e clara da compra (ex: "Cigarro Marlboro", "Compras supermercado", "Medicamentos farmácia")
+4. Desconto total da nota (campo "discount"), procurando por:
+   - Linha "Desconto R$" / "Desconto" no rodapé (valor único), OU
+   - Linhas "Desconto" após cada item — nesse caso, SOME todos num único valor positivo.
+   Retorne como número decimal POSITIVO em reais (ex: 15.61). Se a nota não tiver nenhum desconto, retorne null.
+   NÃO subtraia o desconto dos valores dos itens — os itens ficam com o preço bruto.
 
 IMPORTANTE sobre qualidade da imagem:
 - Se a imagem estiver borrada, escura, cortada ou ilegível, NÃO tente adivinhar valores. Retorne confidence "none".
@@ -30,10 +36,10 @@ IMPORTANTE sobre qualidade da imagem:
 - Se conseguir ler claramente, retorne confidence "high".
 
 Retorne APENAS um JSON válido neste formato, sem markdown:
-{"confidence": "high", "rejectionReason": null, "items": [{"description": "string", "value": number}], "date": "YYYY-MM-DD", "description": "string"}
+{"confidence": "high", "rejectionReason": null, "items": [{"description": "string", "value": number}], "date": "YYYY-MM-DD", "description": "string", "discount": number | null}
 
 Se não conseguir ler algum item, pule-o. Se não encontrar a data, use null para o campo date.
-Se não for um cupom fiscal, retorne {"confidence": "none", "rejectionReason": "A imagem não parece ser um cupom fiscal", "items": [], "date": null, "description": null}.`;
+Se não for um cupom fiscal, retorne {"confidence": "none", "rejectionReason": "A imagem não parece ser um cupom fiscal", "items": [], "date": null, "description": null, "discount": null}.`;
 
 function normalizeDate(date: string | null): string | null {
   if (!date) return null;
@@ -50,6 +56,13 @@ function toConfidence(value: unknown): ReceiptConfidence {
   return "high";
 }
 
+function normalizeDiscount(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(Math.abs(n) * 100) / 100;
+}
+
 function parseReceiptData(text: string): ReceiptData {
   try {
     const parsed = JSON.parse(text);
@@ -57,6 +70,7 @@ function parseReceiptData(text: string): ReceiptData {
       items: parsed.items ?? [],
       date: normalizeDate(parsed.date),
       description: parsed.description ?? null,
+      discount: normalizeDiscount(parsed.discount),
       confidence: toConfidence(parsed.confidence),
       rejectionReason: parsed.rejectionReason ?? null,
     };
@@ -68,11 +82,12 @@ function parseReceiptData(text: string): ReceiptData {
         items: parsed.items ?? [],
         date: normalizeDate(parsed.date),
         description: parsed.description ?? null,
+        discount: normalizeDiscount(parsed.discount),
         confidence: toConfidence(parsed.confidence),
         rejectionReason: parsed.rejectionReason ?? null,
       };
     }
-    return { items: [], date: null, description: null, confidence: "none", rejectionReason: "Não foi possível interpretar a resposta" };
+    return { items: [], date: null, description: null, discount: null, confidence: "none", rejectionReason: "Não foi possível interpretar a resposta" };
   }
 }
 

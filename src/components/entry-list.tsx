@@ -106,7 +106,9 @@ export function EntryList({ entries, currentUserId, members, onDelete }: EntryLi
   return (
     <div className="space-y-3">
       {entries.map((entry) => {
-        const total = entry.items.reduce((s, i) => s + Number(i.value), 0);
+        const subtotal = entry.items.reduce((s, i) => s + Number(i.value), 0);
+        const discount = Number(entry.discount) || 0;
+        const total = subtotal - discount;
         const isTransfer = entry.type === "TRANSFER";
 
         if (isTransfer) {
@@ -185,6 +187,12 @@ export function EntryList({ entries, currentUserId, members, onDelete }: EntryLi
                   </li>
                 ))}
               </ul>
+              {discount > 0 && (
+                <div className="mt-2 pt-2 border-t text-sm flex justify-between text-amber-700">
+                  <span>Desconto</span>
+                  <span className="tabular-nums">− R$ {discount.toFixed(2)}</span>
+                </div>
+              )}
               {entry.receiptUrl && (
                 <div className="mt-2 pt-2 border-t">
                   <ReceiptViewer receiptKey={entry.receiptUrl} />
