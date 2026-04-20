@@ -4,21 +4,6 @@ import { z } from "zod";
 
 export type EntryType = "EXPENSE" | "TRANSFER";
 
-export interface ExpenseItem {
-  id: string;
-  description: string;
-  value: number;
-}
-
-export interface Expense {
-  id: string;
-  description: string;
-  date: string;
-  receiptUrl?: string | null;
-  createdBy: { id: string; name: string };
-  items: ExpenseItem[];
-}
-
 export interface EntryItem {
   id: string;
   description: string;
@@ -59,27 +44,6 @@ export interface SummaryData {
 }
 
 // --- Validation Schemas ---
-
-const expenseItemSchema = z.object({
-  description: z.string().min(1),
-  value: z.number().positive(),
-});
-
-export const createExpenseSchema = z.object({
-  description: z.string().min(1),
-  date: z.string().min(1),
-  groupId: z.string().min(1),
-  items: z.array(expenseItemSchema).min(1),
-  receiptImage: z.string().optional(),
-  receiptMediaType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
-  receiptKey: z.string().optional(),
-});
-
-export const updateExpenseSchema = z.object({
-  description: z.string().min(1).optional(),
-  date: z.string().min(1).optional(),
-  items: z.array(expenseItemSchema).optional(),
-});
 
 const entryItemSchema = z.object({
   description: z.string().min(1),
