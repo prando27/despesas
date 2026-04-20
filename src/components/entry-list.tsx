@@ -21,7 +21,7 @@ function ReceiptViewer({ receiptKey }: { receiptKey: string }) {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [zoomed, setZoomed] = useState(false);
-  const url = `/api/expenses/receipt?key=${encodeURIComponent(receiptKey)}`;
+  const url = `/api/receipts?key=${encodeURIComponent(receiptKey)}`;
 
   useEffect(() => {
     if (fullscreen) {

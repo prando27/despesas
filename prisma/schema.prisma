@@ -20,7 +20,6 @@ model User {
 
   sessions           Session[]
   accounts           Account[]
-  expenses           Expense[]
   entriesCreated     Entry[]   @relation("EntryCreatedBy")
   transfersReceived  Entry[]   @relation("EntryTransferTo")
   memberships        GroupMember[]
@@ -83,10 +82,8 @@ model Group {
   inviteCode String   @unique @map("invite_code")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  members  GroupMember[]
-  expenses Expense[]
-  entries  Entry[]
-  payments MonthPayment[]
+  members GroupMember[]
+  entries Entry[]
 
   @@map("groups")
 }
@@ -105,35 +102,6 @@ model GroupMember {
   @@index([groupId])
   @@index([userId])
   @@map("group_members")
-}
-
-model Expense {
-  id          String        @id @default(cuid())
-  description String
-  date        DateTime
-  receiptUrl  String?       @map("receipt_url")
-  createdById String        @map("created_by_id")
-  createdBy   User          @relation(fields: [createdById], references: [id])
-  groupId     String        @map("group_id")
-  group       Group         @relation(fields: [groupId], references: [id])
-  createdAt   DateTime      @default(now()) @map("created_at")
-  items       ExpenseItem[]
-
-  @@index([date])
-  @@index([createdById])
-  @@index([groupId])
-  @@map("expenses")
-}
-
-model ExpenseItem {
-  id          String  @id @default(cuid())
-  description String
-  value       Decimal @db.Decimal(10, 2)
-  expenseId   String  @map("expense_id")
-  expense     Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-
-  @@index([expenseId])
-  @@map("expense_items")
 }
 
 model Entry {
@@ -168,18 +136,3 @@ model EntryItem {
   @@map("entry_items")
 }
 
-model MonthPayment {
-  id        String    @id @default(cuid())
-  month     Int
-  year      Int
-  isPaid    Boolean   @default(false) @map("is_paid")
-  paidAt    DateTime? @map("paid_at")
-  paidBy    String?   @map("paid_by")
-  groupId   String    @map("group_id")
-  group     Group     @relation(fields: [groupId], references: [id])
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  @@unique([month, year, groupId])
-  @@index([groupId])
-  @@map("month_payments")
-}
