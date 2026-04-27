@@ -87,6 +87,16 @@ export const createEntrySchema = z
     },
   );
 
+export const createInstallmentsSchema = z.object({
+  description: z.string().min(1),
+  startDate: z.string().min(1),
+  groupId: z.string().min(1),
+  total: z.number().positive(),
+  months: z.number().int().min(2).max(60),
+  receiptImage: z.string().optional(),
+  receiptMediaType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
+});
+
 export const updateEntrySchema = z.object({
   description: z.string().min(1).optional(),
   date: z.string().min(1).optional(),

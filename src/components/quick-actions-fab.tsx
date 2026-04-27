@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const HIDDEN_ON = ["/entries/new", "/entries/transfer"];
+const HIDDEN_ON = ["/entries/new", "/entries/transfer", "/entries/new-installments"];
 
 function IconPlus({ className }: { className?: string }) {
   return (
@@ -30,6 +30,19 @@ function IconArrow({ className }: { className?: string }) {
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
+
+function IconCalendarRepeat({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <polyline points="14 14 17 14 17 17" />
+      <path d="M17 14a4 4 0 1 0 0 4" />
     </svg>
   );
 }
@@ -69,12 +82,31 @@ export function QuickActionsFab() {
         className="fixed right-5 bottom-20 z-50 flex flex-col items-end gap-3"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
+        {/* Mini action: Parcelado */}
+        <div
+          className={`flex items-center gap-3 transition-all duration-200 ${
+            open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+          }`}
+          style={{ transitionDelay: open ? "120ms" : "0ms" }}
+        >
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium shadow-sm border">
+            Parcelado
+          </span>
+          <Link
+            href="/entries/new-installments"
+            className="w-12 h-12 rounded-full flex items-center justify-center shadow-md bg-white border-2 border-purple-500 text-purple-600 hover:bg-purple-50 transition-colors"
+            aria-label="Adicionar despesa parcelada"
+          >
+            <IconCalendarRepeat />
+          </Link>
+        </div>
+
         {/* Mini action: Pagamento */}
         <div
           className={`flex items-center gap-3 transition-all duration-200 ${
             open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
           }`}
-          style={{ transitionDelay: open ? "60ms" : "0ms" }}
+          style={{ transitionDelay: open ? "60ms" : "60ms" }}
         >
           <span className="rounded-full bg-white px-3 py-1 text-xs font-medium shadow-sm border">
             Pagamento
